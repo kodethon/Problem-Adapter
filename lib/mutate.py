@@ -7,11 +7,13 @@ import json
 import string
 import pdb
 import subprocess
+import hashlib
 
 from shutil import copyfile
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+MD5 = hashlib.md5()
 
 MAX_ITERATIONS = 100
 NUM_CASES = 10
@@ -52,6 +54,7 @@ if __name__ == "__main__":
 
     good_sequences = [original_sequence]
     bad_sequences = []
+    outputs = []
     
     i = 0
     while i < MAX_ITERATIONS:
@@ -83,7 +86,8 @@ if __name__ == "__main__":
         
         # If the sequence is good, add it good sequences
         valid = True
-        if len(stderr) == 0:
+        if len(stderr) == 0 and stdout not in outputs:
+            outputs.append(stdout)
             good_sequences.append(new_sequence)
         else:
             logger.debug('Bad sequence with error: %s' % stderr)
