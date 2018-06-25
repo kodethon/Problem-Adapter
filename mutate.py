@@ -8,10 +8,13 @@ import string
 import pdb
 import subprocess
 
+from shutil import copyfile
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-MAX_ITERATIONS = 1
+MAX_ITERATIONS = 100
+NUM_CASES = 10
 
 def mutateNum(literal):
     return literal + random.randint(-10, 10)
@@ -66,16 +69,15 @@ if __name__ == "__main__":
         file_name = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(10))
         file_path = os.path.join(dir_path, file_name) 
         fp = open(file_path, 'w')
-        logger.info('Generated new sequence: %s' % new_sequence)
+        logger.debug('Generated new sequence: %s' % new_sequence)
         fp.write(json.dumps(new_sequence))
         fp.close()
 
         # Test the new sequence
         command = "cd %s; python driver.py %s" % (dir_path, file_name)
-        logger.info('Running command: %s' % command)
+        logger.debug('Running command: %s' % command)
         popen_results = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout = popen_results.stdout.read()
-        logger.debug(stdout)
         stderr = popen_results.stderr.read()
         os.remove(file_path)
         
@@ -84,7 +86,29 @@ if __name__ == "__main__":
         if len(stderr) == 0:
             good_sequences.append(new_sequence)
         else:
+            logger.debug('Bad sequence with error: %s' % stderr)
             bad_sequences.append(new_sequence)
 
+        i += 1 
+    
+    # Write cases to files
+    i = 0
+    num_sequences = len(good_sequences)
+    cases_dir = os.path.join(dir_path, 'cases')
+    if not os.path.exists(cases_dir):
+        os.mkdir(cases_dir)
+    while i < NUM_CASES:
+        if i == num_sequences:
+            break
+
+        sequence = good_sequences[num_sequences - 1 - i]
+        json_string = json.dumps(sequence)
+        test_path = os.path.join(cases_dir, "test-%s.json" % (i + 1))
+        fp = open(test_path, 'w')
+        fp.write(json_string)
+        fp.close
+    
         i += 1
+
+    copyfile(test_path, os.path.join(cases_dir, 'test-0.json'))
 
