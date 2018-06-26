@@ -3,13 +3,12 @@ for category in $1/*; do
 
     # If the folder exists...
     if [ -d "$src_folder" ]; then
-        echo "$src_folder exists!"
-        for file in $src_folder/*; do
-            echo "Processing $file..."
-            python lib/prepare.py $file
-            filename=$(basename -- "$file")
-            filename="${filename%.*}"
-            python lib/mutate.py "output/$filename/test-0.json"
+        for dir in $src_folder/*; do
+            echo "Processing $dir..."
+
+            dirname=$(basename -- "$dir")
+            python lib/prepare.py "$dir/$dirname.py"
+            python lib/mutate.py "output/$dirname/test-0.json"
         done
     fi
 done
