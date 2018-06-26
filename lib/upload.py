@@ -29,14 +29,14 @@ if not os.path.exists(cases_path):
     sys.exit()
 
 answers_path = os.path.join(dir_path, 'answers')
-if not os.path.exists(answers_path)
+if not os.path.exists(answers_path):
     logger.error("%s does not exist!" % answers_path)
     sys.exit()
 
 # Generate all the cases
 cases = []
 for filename in os.listdir(cases_path):
-    fp = open(answers_path, filename, 'r')
+    fp = open(os.path.join(answers_path, filename), 'r')
     answer = fp.read()
     fp.close()
     cases.append({
