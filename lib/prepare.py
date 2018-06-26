@@ -63,6 +63,8 @@ def parseList(node):
             ar.append(elt.n) 
         elif isLiteralStr(elt):
             ar.append(elt.s)
+        elif isLiteralList(elt):
+            ar.append(parseList(elt))
         else:
             logger.error('Tried to parse unknown ele of type %s' % node.__class__)
     return ar
@@ -110,7 +112,18 @@ def splitSource(source, lineno):
     lines = source.split("\n")
     return "\n".join(lines[0:lineno]), "\n".join(lines[lineno:])
 
+def modifyRHS(rhs, args, arg_num, marker):
+    if not isFunctionCall(rhs.value):
+        args.append(parseRHS(rhs.value))
+        rhs.value = ast.Str(addStub(arg_num, marker))
+        return True
+    return False
+
 def modifyDriverArgs(functions, _ast, marker):
+    args = []
+    arg_num = 0
+
+    # Pass 1
     st = {} # Symbol Table
     for node in ast.walk(_ast):
         # If assignment, update symbol table
@@ -119,10 +132,16 @@ def modifyDriverArgs(functions, _ast, marker):
                 if isVariable(target):
                     st[target.id] = node
                 elif isAttribute(target):
-                    st[target.attr] = node
-
-    args = []
-    arg_num = 0
+                    # If symbol has an attribute e.g. obj.attr, then try to modify it 
+                    uid = '%s.%s' % (target.value.id, target.attr)
+                    logger.info('Processing symbol with attribute %s' % uid)
+                    modified = modifyRHS(node, args, arg_num, marker)
+                    arg_num = arg_num + 1 if modified else arg_num
+                    st[uid] = node
+                else:
+                    logger.error('Encountered a symbol with an unknown target type.')
+    
+    # Pass 2
     for node in ast.walk(_ast):
         if not isFunctionCall(node):
             continue
@@ -138,12 +157,8 @@ def modifyDriverArgs(functions, _ast, marker):
             # Function calls should be ignored...
             if isVariable(arg) and arg.id in st:
                 logger.debug("Processing argument variable %s for function %s" % (arg.id, func_name))
-                rhv = st[arg.id]
-                if isFunctionCall(rhv.value):
-                    continue
-                else:
-                    args.append(parseRHS(rhv.value))
-                    rhv.value = ast.Str(addStub(arg_num, marker))
+                rhs = st[arg.id]
+                modified = modifyRHS(rhs, args, arg_num, marker)
             elif isLiteralNum(arg):
                 logger.debug("Processing argument number %s for function %s" % (arg.n, func_name))
                 args.append(arg.n)
