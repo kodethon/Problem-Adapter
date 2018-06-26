@@ -83,6 +83,13 @@ def parseRHS(node):
 def addStub(arg_num, marker):
     return "%s_INPUTS[%s]%s" % (marker, arg_num, marker)
 
+def modifyRHS(rhs, args, arg_num, marker):
+    if not isFunctionCall(rhs.value):
+        args.append(parseRHS(rhs.value))
+        rhs.value = ast.Str(addStub(arg_num, marker))
+        return True
+    return False
+
 ### OUTLINE
 def getFunctionDefs(_ast):
     ''' Returns a dictionary of function definitions mapped to line numbers '''
@@ -107,13 +114,6 @@ def splitSource(source, lineno):
     lines = source.split("\n")
     return "\n".join(lines[0:lineno]), "\n".join(lines[lineno:])
 
-def modifyRHS(rhs, args, arg_num, marker):
-    if not isFunctionCall(rhs.value):
-        args.append(parseRHS(rhs.value))
-        rhs.value = ast.Str(addStub(arg_num, marker))
-        return True
-    return False
-
 def modifyDriverArgs(functions, _ast, marker):
     args = []
     arg_num = 0
@@ -121,20 +121,22 @@ def modifyDriverArgs(functions, _ast, marker):
     # Pass 1
     st = {} # Symbol Table
     for node in ast.walk(_ast):
+        if not isAssignment(node):
+            continue
+
         # If assignment, update symbol table
-        if isAssignment(node):
-            for target in node.targets:
-                if isVariable(target):
-                    st[target.id] = node
-                elif isAttribute(target):
-                    # If symbol has an attribute e.g. obj.attr, then try to modify it 
-                    uid = '%s.%s' % (target.value.id, target.attr)
-                    logger.info('Processing symbol with attribute %s' % uid)
-                    modified = modifyRHS(node, args, arg_num, marker)
-                    arg_num = arg_num + 1 if modified else arg_num
-                    st[uid] = node
-                else:
-                    logger.error('Encountered a symbol with an unknown target type.')
+        for target in node.targets:
+            if isVariable(target):
+                st[target.id] = node
+            elif isAttribute(target):
+                # If symbol has an attribute e.g. obj.attr, then try to modify it 
+                uid = '%s.%s' % (target.value.id, target.attr)
+                logger.info('Processing symbol with attribute %s' % uid)
+                modified = modifyRHS(node, args, arg_num, marker)
+                arg_num = arg_num + 1 if modified else arg_num
+                st[uid] = node
+            else:
+                logger.error('Encountered a symbol with an unknown target type.')
     
     # Pass 2
     for node in ast.walk(_ast):
@@ -196,7 +198,7 @@ def writeOutput(driver, main, case):
     fp.write(main)
     fp.close()
 
-    fp = open(os.path.join(sandbox, 'test-0.json'), 'w')
+    fp = open(os.path.join(sandbox, 'seed.json'), 'w')
     fp.write(json.dumps(case))
 
 if __name__ == "__main__":
