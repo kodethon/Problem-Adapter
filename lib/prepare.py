@@ -96,16 +96,11 @@ def findSplitPoint(source, functions):
     ''' Line of code where functions definitions stop '''
 
     lines = source.split("\n")
-    count = 0
     start = max(functions.values())
-
-    for line in lines[start:]:
-        if len(line) == 0:
-            continue
-
-        if line[0] != ' ' and line[0] != "\t":
-            return start + count + 1
-        count += 1
+    for i in range(start, len(lines)):
+        line = lines[i]
+        if len(line) != 0 and line[0] != ' ' and line[0] != "\t":
+            return i + 1
 
 def splitSource(source, lineno):
     ''' Splits the source at lineno and returns both parts '''
