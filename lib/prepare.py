@@ -116,7 +116,10 @@ def modifyDriverArgs(functions, _ast, marker):
         # If assignment, update symbol table
         if isAssignment(node):
             for target in node.targets:
-                st[target.id] = node
+                if isVariable(target):
+                    st[target.id] = node
+                elif isAttribute(target):
+                    st[target.attr] = node
 
     args = []
     arg_num = 0
