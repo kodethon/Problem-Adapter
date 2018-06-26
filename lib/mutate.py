@@ -8,6 +8,7 @@ import string
 import pdb
 import subprocess
 import hashlib
+import time
 
 from shutil import copyfile
 
@@ -15,6 +16,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 MD5 = hashlib.md5()
 
+TIMEOUT = 60 * 5
 MAX_ITERATIONS = 100
 NUM_CASES = 10
 
@@ -57,7 +59,8 @@ if __name__ == "__main__":
     outputs = []
     
     i = 0
-    while i < MAX_ITERATIONS:
+    start_time = time.time()
+    while i < MAX_ITERATIONS and time.time() - start_time < TIMEOUT:
         # Pick a random good sequence and copy it
         random_sequence = good_sequences[random.randint(0, len(good_sequences) - 1)]
         new_sequence = copy.deepcopy(random_sequence)
@@ -77,7 +80,7 @@ if __name__ == "__main__":
         fp.close()
 
         # Test the new sequence
-        command = "cd %s; python driver.py %s" % (dir_path, file_name)
+        command = "cd %s; timeout 10s python driver.py %s" % (dir_path, file_name)
         logger.debug('Running command: %s' % command)
         popen_results = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout = popen_results.stdout.read()
@@ -85,8 +88,9 @@ if __name__ == "__main__":
         os.remove(file_path)
         
         # If the sequence is good, add it good sequences
-        valid = True
-        if len(stderr) == 0 and stdout not in outputs:
+        valid_stderr = len(stderr) == 0
+        valid_stdout = stdout not in outputs and len(stdout) > 0
+        if valid_stdout and valid_stderr:
             outputs.append(stdout)
             good_sequences.append(new_sequence)
         else:
