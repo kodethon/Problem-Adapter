@@ -205,7 +205,7 @@ def writeOutput(driver, main, skeleton, case):
     fp.write(driver)
     fp.close()
 
-    fp = open(os.path.join(sandbox, 'module.py'), 'w')
+    fp = open(os.path.join(sandbox, 'solution.py'), 'w')
     fp.write(main)
     fp.close()
 
@@ -244,6 +244,6 @@ if __name__ == "__main__":
     code = code.replace("%s'" % marker, '')
     code = code.replace("'%s" % marker, '')
     driver = code.replace(main, '')
-    driver = "execfile('module.py')\n\nimport json\nimport sys\n\n_INPUTS = json.loads(open(sys.argv[1]).read())\n\n" + driver
+    driver = "import json\nimport sys\n\nexecfile(sys.argv[1])\n\n_INPUTS = json.loads(open(sys.argv[2]).read())\n\n" + driver
     
     writeOutput(driver, main, skeleton, case) 
