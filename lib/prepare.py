@@ -114,6 +114,12 @@ def splitSource(source, lineno):
     lines = source.split("\n")
     return "\n".join(lines[0:lineno]), "\n".join(lines[lineno:])
 
+def removeFunctionBodies(_ast):
+    for node in ast.walk(_ast):
+        if not isFunctionDef(node):
+            continue
+        node.body = [ast.Pass()]
+
 def modifyDriverArgs(functions, _ast, marker):
     args = []
     arg_num = 0
@@ -157,6 +163,8 @@ def modifyDriverArgs(functions, _ast, marker):
                 if rhs == None:
                     continue
                 modified = modifyRHS(rhs, args, arg_num, marker)
+
+                # Delete the symbol from the table
                 if modified:
                     del st[arg.id]
             elif isLiteralNum(arg):
@@ -183,7 +191,7 @@ def getFunctionCallers(_ast):
             functions[node.name] += 1
     return functions
 
-def writeOutput(driver, main, case):
+def writeOutput(driver, main, skeleton, case):
     dest_dir = 'output'
     if not os.path.exists(dest_dir):
         os.mkdir(dest_dir)
@@ -201,8 +209,13 @@ def writeOutput(driver, main, case):
     fp.write(main)
     fp.close()
 
+    fp = open(os.path.join(sandbox, 'skeleton.py'), 'w')
+    fp.write(skeleton)
+    fp.close()
+
     fp = open(os.path.join(sandbox, 'seed.json'), 'w')
     fp.write(json.dumps(case))
+    fp.close()
 
 if __name__ == "__main__":
     # Read file contents
@@ -215,6 +228,12 @@ if __name__ == "__main__":
 
     # Generate modified source code
     main, driver = splitSource(code, lineno)
+
+    # Generate skeleton code
+    _ast = ast.parse(main)
+    removeFunctionBodies(_ast)
+    skeleton = astor.to_source(_ast)
+
     _ast = ast.parse(driver)
 
     # Replace caller args with different value
@@ -227,4 +246,4 @@ if __name__ == "__main__":
     driver = code.replace(main, '')
     driver = "execfile('module.py')\n\nimport json\nimport sys\n\n_INPUTS = json.loads(open(sys.argv[1]).read())\n\n" + driver
     
-    writeOutput(driver, main, case) 
+    writeOutput(driver, main, skeleton, case) 
