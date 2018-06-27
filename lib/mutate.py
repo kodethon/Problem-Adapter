@@ -20,6 +20,7 @@ MAX_RUNTIME = 60 * 5
 MAX_ITERATIONS = 100
 NUM_CASES = 10
 SOLUTION_FILE = 'solution.py'
+SEED_FILE = 'seed.json'
 
 def mutateNum(literal):
     return literal + random.randint(-10, 10)
@@ -58,8 +59,8 @@ def getNumMutations(iteration, num_good_sequences):
     return 1
 
 if __name__ == "__main__":
-    test_path = sys.argv[1]
-    dir_path = os.path.dirname(test_path)
+    dir_path = sys.argv[1]
+    test_path = os.path.join(dir_path, SEED_FILE)
     original_sequence = json.loads(open(test_path).read())
 
     good_sequences = [original_sequence]

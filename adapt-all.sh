@@ -7,13 +7,7 @@ for category in $1/*; do
             echo "Processing $dir..."
 
             dirname=$(basename -- "$dir")
-            python lib/prepare.py "$dir/$dirname.py"
-
-            cwd=$(pwd)
-            cd "$dir"; zip -r cases.zip $dir/cases
-            cd "$cwd"
-
-            python lib/mutate.py "output/$dirname/test-0.json"
+            sh adapt-one.sh $dir/$dirname.py
         done
     fi
 done
