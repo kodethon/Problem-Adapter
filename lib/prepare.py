@@ -106,7 +106,7 @@ def findSplitPoint(source, functions):
     start = max(functions.values())
     for i in range(start, len(lines)):
         line = lines[i]
-        if len(line) != 0 and line[0] != ' ' and line[0] != "\t":
+        if len(line) != 0 and line[0] != ' ' and line[0] != "\t" and line[0] != "\r" and line[0] != "\n":
             return i + 1
 
 def splitSource(source, lineno):
@@ -117,7 +117,6 @@ def splitSource(source, lineno):
 def modifyDriverArgs(functions, _ast, marker):
     args = []
     arg_num = 0
-
     # Pass 1
     st = {} # Symbol Table
     for node in ast.walk(_ast):
@@ -155,7 +154,11 @@ def modifyDriverArgs(functions, _ast, marker):
             if isVariable(arg) and arg.id in st:
                 logger.debug("Processing argument variable %s for function %s" % (arg.id, func_name))
                 rhs = st[arg.id]
+                if rhs == None:
+                    continue
                 modified = modifyRHS(rhs, args, arg_num, marker)
+                if modified:
+                    del st[arg.id]
             elif isLiteralNum(arg):
                 logger.debug("Processing argument number %s for function %s" % (arg.n, func_name))
                 args.append(arg.n)
