@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 MAX_RUNTIME = 60 * 5
 MAX_ITERATIONS = 100
 NUM_CASES = 10
+SOLUTION_FILE = 'solution.py'
 
 def mutateNum(literal):
     return literal + random.randint(-10, 10)
@@ -96,7 +97,7 @@ if __name__ == "__main__":
         fp.close()
 
         # Test the new sequence
-        command = "cd %s; timeout 10s python driver.py %s" % (dir_path, file_name)
+        command = "cd %s; timeout 10s python driver.py %s %s" % (dir_path, SOLUTION_FILE, file_name)
         logger.debug('Running command: %s' % command)
         popen_results = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout = popen_results.stdout.read()

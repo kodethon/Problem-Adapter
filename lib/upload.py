@@ -9,7 +9,6 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 DESCRIPTION_FILE = 'description.txt'
-AUTOGRADER_REL_PATH = '../autograder'
 CASES_FOLDER = 'cases'
 CONTAINER_NAME_ENV = 'KODETHON_CONTAINER_NAME'
 USER_ID_ENV = 'KODETHON_USER_ID'
@@ -18,8 +17,14 @@ ASSIGNMENT_ID_ENV = 'KODETHON_ASSIGNMENT_ID'
 IMPORT_URL = 'http://localhost:3456/course/tests/import'
 UPLOAD_URL = 'http://localhost:3456/containers/upload_file'
 
+AUTOGRADER_REL_PATH = '../autograder'
+HANDOUT_FOLDER = 'handout'
 CASES_ZIP = 'cases.zip'
 DRIVER_FILE = 'driver.py'
+MAIN_FILE = 'main.py'
+SKELETON_FILE = 'skeleton.py'
+SOLUTION_FILE = 'solution.py'
+SUBMISSION_FOLDER = 'submission'
 
 def beautifyTitle(title):
     title = title.replace('-', ' ')
@@ -33,7 +38,7 @@ def generateCases(cases_path, answers_path):
         answer = fp.read()
         fp.close()
         cases.append({
-            'arguments' : os.path.join(AUTOGRADER_REL_PATH, CASES_FOLDER, filename),
+            'argument' : "%s %s" % (MAIN_FILE, os.path.join(AUTOGRADER_REL_PATH, CASES_FOLDER, filename)),
             'answer' : answer
         })
     return cases
@@ -76,6 +81,34 @@ def uploadFiles(dirpath):
         'name' : os.environ[ASSIGNMENT_ID_ENV],       
         'file_name' : DRIVER_FILE,
         'destination' : os.path.join('/', title, os.path.basename(AUTOGRADER_REL_PATH)),
+        'file_content' : base64.b64encode(content)
+    }
+    r = requests.post(UPLOAD_URL, data = package)
+
+    # Upload skeleton file
+    fp = open(os.path.join(dirpath, SKELETON_FILE), 'r')
+    content = fp.read()
+    fp.close()
+    package = {
+        'user_id' : os.environ[USER_ID_ENV],
+        'access_token' : os.environ[ACCESS_TOKEN_ENV],
+        'name' : os.environ[ASSIGNMENT_ID_ENV],       
+        'file_name' : MAIN_FILE,
+        'destination' : os.path.join('/', title, os.path.basename(HANDOUT_FOLDER)),
+        'file_content' : base64.b64encode(content)
+    }
+    r = requests.post(UPLOAD_URL, data = package)
+
+    # Upload solution file
+    fp = open(os.path.join(dirpath, SOLUTION_FILE), 'r')
+    content = fp.read()
+    fp.close()
+    package = {
+        'user_id' : os.environ[USER_ID_ENV],
+        'access_token' : os.environ[ACCESS_TOKEN_ENV],
+        'name' : os.environ[ASSIGNMENT_ID_ENV],       
+        'file_name' : MAIN_FILE,
+        'destination' : os.path.join('/', title, os.path.basename(SUBMISSION_FOLDER)),
         'file_content' : base64.b64encode(content)
     }
     r = requests.post(UPLOAD_URL, data = package)
