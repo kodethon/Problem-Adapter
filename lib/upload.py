@@ -4,13 +4,13 @@ import logging
 import json
 import requests
 import base64
+import pdb
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 DESCRIPTION_FILE = 'description.txt'
 CASES_FOLDER = 'cases'
-CONTAINER_NAME_ENV = 'KODETHON_CONTAINER_NAME'
 USER_ID_ENV = 'KODETHON_USER_ID'
 ACCESS_TOKEN_ENV = 'KODETHON_ACCESS_TOKEN'
 ASSIGNMENT_ID_ENV = 'KODETHON_ASSIGNMENT_ID'
@@ -119,9 +119,12 @@ if __name__ == "__main__":
         logger.error("%s does not exist!" % file_path)
         sys.exit()
 
-    if os.environ[CONTAINER_NAME_ENV] == None:
-        logger.error("%s is not set." % CONTAINER_NAME_ENV)
+    if not os.path.isdir(file_path):
+        logger.error("%s must be a directory!" % file_path)
         sys.exit()
+
+    if file_path[len(file_path) - 1] != '/':
+        file_path += '/'
 
     if os.environ[USER_ID_ENV] == None:
         logger.error("%s is not set." % USER_ID_ENV)
