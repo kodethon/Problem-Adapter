@@ -101,13 +101,12 @@ def getFunctionDefs(_ast):
 
 def findSplitPoint(source, functions):
     ''' Line of code where functions definitions stop '''
-
     lines = source.split("\n")
     start = max(functions.values())
     for i in range(start, len(lines)):
         line = lines[i]
-        if len(line) != 0 and line[0] != ' ' and line[0] != "\t" and line[0] != "\r" and line[0] != "\n":
-            return i + 1
+        if not (not line[0] or line[0].isspace()):
+            return i
 
 def splitSource(source, lineno):
     ''' Splits the source at lineno and returns both parts '''
@@ -128,7 +127,6 @@ def modifyDriverArgs(functions, _ast, marker):
     for node in ast.walk(_ast):
         if not isAssignment(node):
             continue
-
         # If assignment, update symbol table
         for target in node.targets:
             if isVariable(target):
@@ -142,7 +140,7 @@ def modifyDriverArgs(functions, _ast, marker):
                 st[uid] = node
             else:
                 logger.error('Encountered a symbol with an unknown target type.')
-    
+
     # Pass 2
     for node in ast.walk(_ast):
         if not isFunctionCall(node):
