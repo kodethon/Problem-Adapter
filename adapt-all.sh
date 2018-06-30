@@ -1,13 +1,10 @@
 for category in $1/*; do
-    src_folder=$category/python
+    for subcategory in $category/*; do
+        for problem in $subcategory/*; do
+            echo "Processing $problem..."
 
-    # If the folder exists...
-    if [ -d "$src_folder" ]; then
-        for dir in $src_folder/*; do
-            echo "Processing $dir..."
-
-            dirname=$(basename -- "$dir")
-            sh adapt-one.sh $dir/$dirname.py
+            problem_name=$(basename -- "$problem")
+            sh adapt-one.sh $problem/$problem_name.py
         done
-    fi
+    done
 done
