@@ -236,7 +236,11 @@ if __name__ == "__main__":
     # Read file contents
     fp = open(sys.argv[1])
     code = fp.read()
-    _ast = ast.parse(code)
+    try:
+        _ast = ast.parse(code)
+    except SyntaxError as e:
+        logger.error('Could not parse %s' % sys.argv[1])
+        sys.exit()
 
     functions = getFunctionDefs(_ast)
     lineno = findSplitPoint(code, functions)
@@ -260,6 +264,6 @@ if __name__ == "__main__":
     code = code.replace("%s'" % marker, '')
     code = code.replace("'%s" % marker, '')
     driver = code.replace(main, '')
-    driver = "import json\nimport sys\n\nexecfile(sys.argv[1])\n\n_INPUTS = json.loads(open(sys.argv[2]).read())\n\n" + driver
+    driver = "import json\nimport sys\n\nexec(open(sys.argv[1]).read())\n\n_INPUTS = json.loads(open(sys.argv[2]).read())\n\n" + driver
     
     writeOutput(driver, main, skeleton, case) 

@@ -10,6 +10,7 @@ import subprocess
 import hashlib
 import time
 import math
+import six
 
 from shutil import copyfile
 
@@ -17,49 +18,93 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 MAX_RUNTIME = 60
-MAX_ITERATIONS = 250
+MAX_ITERATIONS = 100
 NUM_CASES = 25
 SOLUTION_FILE = 'solution.py'
 SEED_FILE = 'seed.json'
 
-def mutateNum(literal):
-    is_edge = random.randint(0, 10) < 2
-    if is_edge:
-        return sys.maxint if is_edge == 0 else -sys.maxint - 1
-    else:
-        return literal + random.randint(-10, 10)
+def isPython3():
+    return sys.version_info >= (3, 0)
 
-def mutateStr(literal):
-    s = ''
-    is_edge = random.randint(0, 10) < 2
-    if is_edge:
-        num_characters = random.randint(1, 25)
-    else:
-        num_characters = 256 if is_edge == 0 else 0
+interpreter = 'python3' if isPython3() else 'python'
 
-    for c in range(0, num_characters):
-        s += random.choice(string.letters)
-    return s
+class Mutation():
+    def __init__(self, sequence):
+        self.input_set = self.generateInputSet(sequence)
+        self.random = False
+        self.index = 0
 
-def mutateList(literal):
-    for i, ele in enumerate(literal):
-        literal[i] = mutate(ele)
-    return literal
+    def flatten(self, l):
+        return [item for sublist in l for item in sublist]
 
-def mutateDict(literal):
-    return literal
+    def generateInputSet(self, sequence):
+        input_set = []
+        for ele in sequence:
+            if isinstance(ele, six.string_types):
+                input_set.append(ele.split(''))
+            elif ele.__class__ == dict:
+                continue
+            elif ele.__class__ == list:
+                s = []
+                for subele in ele:
+                    rs = self.flatten(self.generateInputSet(subele))
+                    s.append(rs)
+                input_set.append(self.flatten(s))
+            else:
+                input_set.append([ele])
+        return input_set
+       
+    def getFromInputSet(self):
+        l = self.input_set[self.index]
+        return l[random.randint(0, len(l) - 1)]
 
-def mutate(literal):
-    if literal.__class__ == str or literal.__class__ == unicode:
-        return mutateStr(literal)
-    elif literal.__class__ == int or literal.__class__ == float:
-        return mutateNum(literal)
-    elif literal.__class__ == list:
-        return mutateList(literal)
-    elif literal.__class__ == dict:
-        return mutateDict(literal)
-    else:
-        logger.error('Tried to mutate unknown literal of type %s' % literal.__class__)
+    def mutateNum(self, literal):
+        if not self.random:
+            return self.getFromInputSet()    
+        else:
+            is_edge = random.randint(0, 50) < 2
+            if is_edge:
+                return sys.maxsize if is_edge == 0 else -sys.maxsize - 1
+            else:
+                return literal + random.randint(-10, 10)
+
+    def setRandomMethod(self):
+        self.random = random.randint(0, 1) == 0
+
+    def mutateStr(self, literal):
+        s = ''
+        is_edge = random.randint(0, 50) < 2
+        if is_edge:
+            num_characters = random.randint(1, 25)
+        else:
+            num_characters = 256 if is_edge == 0 else 0
+
+        for c in range(0, num_characters):
+            s += random.choice(string.letters)
+        return s
+
+    def mutateList(self, literal):
+        for i, ele in enumerate(literal):
+            literal[i] = self.mutate(ele)
+        return literal
+
+    def mutateDict(literal):
+        return literal
+
+    def mutate(self, literal):
+        if isinstance(literal, six.string_types):
+            return self.mutateStr(literal)
+        elif literal.__class__ == int or literal.__class__ == float:
+            return self.mutateNum(literal)
+        elif literal.__class__ == list:
+            return self.mutateList(literal)
+        elif literal.__class__ == dict:
+            return self.mutateDict(literal)
+        else:
+            logger.error('Tried to mutate unknown literal of type %s' % literal.__class__)
+
+def getSequenceKey(sequence_string):
+    return hashlib.md5(sequence_string.encode('utf-8')).hexdigest()
 
 def getNumMutations(iteration, num_good_sequences):
     threshold_breached = iteration > MAX_ITERATIONS / 2
@@ -67,6 +112,18 @@ def getNumMutations(iteration, num_good_sequences):
     if threshold_breached and lacking_sequences:
         return int(math.log(iteration))
     return 1
+
+def test(dir_path, sequence_string):
+    # Generate the test case
+    file_name = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(10))
+    file_path = os.path.join(dir_path, file_name) 
+    fp = open(file_path, 'w')
+    fp.write(sequence_string)
+    fp.close()
+    command = "cd %s; timeout 10s sh -c '%s driver.py %s %s; rm %s'" % (dir_path, interpreter, SOLUTION_FILE, file_name, file_name)
+    logger.debug('Running command: %s' % command)
+    results = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return results
 
 if __name__ == "__main__":
     dir_path = sys.argv[1]
@@ -78,46 +135,42 @@ if __name__ == "__main__":
 
     good_sequences = [original_sequence]
     bad_sequences = []
+
     outputs = []
     outputs_map = {}
     
     i = 0
     start_time = time.time()
-    while (i < MAX_ITERATIONS or len(good_sequences) < NUM_CASES) and time.time() - start_time < MAX_RUNTIME:
+    mutation = Mutation(original_sequence)
+    while i < MAX_ITERATIONS and time.time() - start_time < MAX_RUNTIME:
+        sequences = len(good_sequences)
+
         # Pick a random good sequence and copy it
-        index = random.randint(len(good_sequences) / 2, len(good_sequences) - 1)
+        index = random.randint(int(sequences / 2), sequences - 1)
         random_sequence = good_sequences[index]
         new_sequence = copy.deepcopy(random_sequence)
         
         if i != 0:
             # Pick a index to mutate and mutate it
-            num_mutations = getNumMutations(i, len(good_sequences))
+            num_mutations = getNumMutations(i, sequences)
             for n in range(num_mutations):
                 index = random.randint(0, len(random_sequence) - 1)
-                new_sequence[index] = mutate(new_sequence[index])
-        
+                mutation.index = index
+                mutation.setRandomMethod()
+                new_sequence[index] = mutation.mutate(new_sequence[index])
+            logger.debug('Generated new sequence: %s' % new_sequence)
+
         # Check if sequence has been seen
         sequence_string = json.dumps(new_sequence)
-        key = hashlib.md5(sequence_string).hexdigest()
+        key = getSequenceKey(sequence_string)
         if key in outputs_map:
             continue
-        
-        # Generate the test case
-        file_name = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(10))
-        file_path = os.path.join(dir_path, file_name) 
-        fp = open(file_path, 'w')
-        logger.debug('Generated new sequence: %s' % new_sequence)
-        fp.write(sequence_string)
-        fp.close()
 
         # Test the new sequence
-        command = "cd %s; timeout 10s python driver.py %s %s" % (dir_path, SOLUTION_FILE, file_name)
-        logger.debug('Running command: %s' % command)
-        popen_results = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        popen_results = test(dir_path, sequence_string)
         stdout = popen_results.stdout.read()
         outputs_map[key] = stdout
         stderr = popen_results.stderr.read()
-        os.remove(file_path)
         
         # If the sequence is good, add it good sequences
         valid_stderr = len(stderr) == 0
@@ -133,9 +186,6 @@ if __name__ == "__main__":
                 
         i += 1 
     
-    # Copy the base test
-    #copyfile(test_path, os.path.join(cases_dir, '0'))
-
     # Write cases to files
     cases_dir = os.path.join(dir_path, 'cases')
     if not os.path.exists(cases_dir):
@@ -168,8 +218,8 @@ if __name__ == "__main__":
         # Write answer
         answer_path = os.path.join(answers_dir, str(i))
         fp = open(answer_path, 'w')
-        key = hashlib.md5(sequence_string).hexdigest()
-        fp.write(outputs_map[key])
+        key = getSequenceKey(sequence_string)
+        fp.write(str(outputs_map[key]))
     
         i += 1
 
