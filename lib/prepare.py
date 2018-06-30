@@ -240,6 +240,7 @@ if __name__ == "__main__":
         _ast = ast.parse(code)
     except SyntaxError as e:
         logger.error('Could not parse %s' % sys.argv[1])
+        logger.error(e)
         sys.exit()
 
     functions = getFunctionDefs(_ast)
