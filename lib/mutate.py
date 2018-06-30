@@ -16,20 +16,30 @@ from shutil import copyfile
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-MAX_RUNTIME = 60 * 5
-MAX_ITERATIONS = 100
-NUM_CASES = 10
+MAX_RUNTIME = 60
+MAX_ITERATIONS = 250
+NUM_CASES = 25
 SOLUTION_FILE = 'solution.py'
 SEED_FILE = 'seed.json'
 
 def mutateNum(literal):
-    return literal + random.randint(-10, 10)
+    is_edge = random.randint(0, 10) < 2
+    if is_edge:
+        return sys.maxint if is_edge == 0 else -sys.maxint - 1
+    else:
+        return literal + random.randint(-10, 10)
 
 def mutateStr(literal):
-    string = ''
-    for c in literal:
-        string += random.choice(string.letters)
-    return string
+    s = ''
+    is_edge = random.randint(0, 10) < 2
+    if is_edge:
+        num_characters = random.randint(1, 25)
+    else:
+        num_characters = 256 if is_edge == 0 else 0
+
+    for c in range(0, num_characters):
+        s += random.choice(string.letters)
+    return s
 
 def mutateList(literal):
     for i, ele in enumerate(literal):
@@ -62,6 +72,9 @@ if __name__ == "__main__":
     dir_path = sys.argv[1]
     test_path = os.path.join(dir_path, SEED_FILE)
     original_sequence = json.loads(open(test_path).read())
+    if len(original_sequence) == 0:
+        logger.error('No inputs to mutate, exiting...')
+        sys.exit()
 
     good_sequences = [original_sequence]
     bad_sequences = []
