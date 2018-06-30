@@ -105,7 +105,7 @@ def findSplitPoint(source, functions):
     start = max(functions.values())
     for i in range(start, len(lines)):
         line = lines[i]
-        if not (not line[0] or line[0].isspace()):
+        if len(line) > 0 and not line[0].isspace():
             return i
 
 def splitSource(source, lineno):
@@ -122,6 +122,7 @@ def removeFunctionBodies(_ast):
 def modifyDriverArgs(functions, _ast, marker):
     args = []
     arg_num = 0
+
     # Pass 1
     st = {} # Symbol Table
     for node in ast.walk(_ast):
@@ -154,17 +155,20 @@ def modifyDriverArgs(functions, _ast, marker):
         for arg in node.args:
             # If one of the args is a variable that has been defined,
             # replace the variable definiation with a stub
-            # Function calls should be ignored...
             if isVariable(arg) and arg.id in st:
                 logger.debug("Processing argument variable %s for function %s" % (arg.id, func_name))
+
                 rhs = st[arg.id]
                 if rhs == None:
                     continue
-                modified = modifyRHS(rhs, args, arg_num, marker)
 
+                modified = modifyRHS(rhs, args, arg_num, marker)
+                # Function calls should be ignored...
+                if not modified:
+                    continue
+                
                 # Delete the symbol from the table
-                if modified:
-                    del st[arg.id]
+                del st[arg.id]
             elif isLiteralNum(arg):
                 logger.debug("Processing argument number %s for function %s" % (arg.n, func_name))
                 args.append(arg.n)
