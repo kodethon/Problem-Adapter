@@ -40,7 +40,7 @@ def mutateDict(literal):
     return literal
 
 def mutate(literal):
-    if literal.__class__ == str:
+    if literal.__class__ == str or literal.__class__ == unicode:
         return mutateStr(literal)
     elif literal.__class__ == int or literal.__class__ == float:
         return mutateNum(literal)
