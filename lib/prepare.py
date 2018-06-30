@@ -32,7 +32,13 @@ def isLiteralList(node):
     return node.__class__ == ast.List
 
 def isVariable(node):
-    return node.__class__ == ast.Name
+    return node.__class__ == ast.Name or node.__class__ == ast.Subscript
+
+def getVariableName(node):
+    if node.__class__ == ast.Name:
+        return node.id
+    if node.__class__ == ast.Subscript:
+        return node.value.id
 
 def isAttribute(node):
     return node.__class__ == ast.Attribute
@@ -151,14 +157,21 @@ def modifyDriverArgs(functions, _ast, marker):
         func_name = getFunctionName(node)
         if func_name not in functions:
             continue
-
+        
         for arg in node.args:
             # If one of the args is a variable that has been defined,
             # replace the variable definiation with a stub
-            if isVariable(arg) and arg.id in st:
-                logger.debug("Processing argument variable %s for function %s" % (arg.id, func_name))
+            if isVariable(arg):
+                var_name = getVariableName(arg)
 
-                rhs = st[arg.id]
+                # If the variable is not in the symbol table, 
+                # then assume it is not something we should modify
+                if not var_name in st:
+                    continue
+
+                logger.debug("Processing argument variable %s for function %s" % (var_name, func_name))
+
+                rhs = st[var_name]
                 if rhs == None:
                     continue
 
@@ -168,7 +181,7 @@ def modifyDriverArgs(functions, _ast, marker):
                     continue
                 
                 # Delete the symbol from the table
-                del st[arg.id]
+                del st[var_name]
             elif isLiteralNum(arg):
                 logger.debug("Processing argument number %s for function %s" % (arg.n, func_name))
                 args.append(arg.n)
@@ -242,6 +255,7 @@ if __name__ == "__main__":
     marker = "*****"
 
     case = modifyDriverArgs(functions, _ast, marker) 
+    
     code = astor.to_source(_ast)
     code = code.replace("%s'" % marker, '')
     code = code.replace("'%s" % marker, '')
