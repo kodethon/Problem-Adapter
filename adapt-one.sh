@@ -1,12 +1,17 @@
 file_path=$1
 file_name=$(basename -- "$file_path")
 prob_name="${file_name%.*}"
-python lib/prepare.py "$file_path"
+
+if [ ! -e "log" ]; then
+    mkdir log
+fi
+
+python lib/prepare.py "$file_path" 2>> log/prepare.log
 
 output_dir=output/$prob_name
 
 # Generate cases folder
-python lib/mutate.py "$output_dir"
+python lib/mutate.py "$output_dir" 2>> log/mutate.log
 
 # Zip up cases folder
 cwd=$(pwd)
