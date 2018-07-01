@@ -55,11 +55,14 @@ def isAssignment(node):
     return node.__class__ == ast.Assign
 
 def getFunctionName(node):
-    func = node.func
-    if func.__class__  == ast.Name:
-        return func.id
+    if node.__class__ == ast.FunctionDef:
+        return node.name
     else:
-        return func.attr
+        func = node.func
+        if func.__class__  == ast.Name:
+            return func.id
+        else:
+            return func.attr
 
 def parseList(node):
     ''' Given node is of type list, returns an actual list '''
@@ -105,25 +108,86 @@ def getFunctionDefs(_ast):
             functions[node.name] = node.lineno
     return functions
 
+def getFunctionCallers(_ast):
+    ''' Returns a dictionary of function calls mapped to instances '''
+    functions = {}
+    for node in ast.walk(_ast):
+        if isFunctionCall(node):
+            func_name = getFunctionName(node) 
+            if not func_name in functions:
+                functions[func_name] = 0
+            functions[func_name] += 1
+    return functions
+
+def tryInlineMain(code, split_point, functions, callers):
+    if 'main' not in functions or 'main' not in callers:
+        return None, None
+    else:
+        lineno = functions['main']
+        num_callers = callers['main']
+        if split_point > lineno and num_callers == 1:
+            main, driver = splitSource(code, lineno)
+
+            # Find the 'main' function body
+            main_function_start = -1
+            main_function_end = -1
+            _ast = ast.parse(main)
+            for node in ast.walk(_ast):
+                if not isFunctionDef(node):
+                    continue
+                func_name = getFunctionName(node)
+                if func_name != 'main':
+                    continue
+                main_function_start = node.lineno
+                main_function_end = findFunctionEnd(main, node.lineno)
+                break
+                       
+            lines = main.split("\n")
+            main_function = "\n".join(lines[main_function_start:main_function_end])
+            # main_function_start = lineno of 'def main', subtract 1 from it to get the line before it
+            main = "\n".join(lines[0:main_function_start - 1]) + "\n".join(lines[main_function_end:])
+
+            _ast = ast.parse(driver)
+            for node in ast.walk(_ast):
+                if not isFunctionCall(node):
+                    continue
+                func_name = getFunctionName(node)
+                if func_name != 'main':
+                    continue
+                lines = driver.split("\n")
+                lines[node.lineno - 1] = main_function 
+                return main, "\n".join(lines)
+
 def findSplitPoint(source, functions):
     ''' Line of code where functions definitions stop '''
-    lines = source.split("\n")
     start = max(functions.values())
+    return findFunctionEnd(source, start) 
+
+def findFunctionEnd(source, start):
+    lines = source.split("\n")
     for i in range(start, len(lines)):
         line = lines[i]
         if len(line) > 0 and not line[0].isspace():
             return i
+    return i + 1
 
 def splitSource(source, lineno):
     ''' Splits the source at lineno and returns both parts '''
     lines = source.split("\n")
-    return "\n".join(lines[0:lineno]), "\n".join(lines[lineno:])
+    return "\n".join(lines[0:lineno + 1]), "\n".join(lines[lineno + 1:])
 
 def removeFunctionBodies(_ast):
     for node in ast.walk(_ast):
         if not isFunctionDef(node):
             continue
         node.body = [ast.Pass()]
+
+def getSymbol(node):
+    symbol = ''
+    while node.__class__ == ast.Attribute:
+        symbol = node.attr + '.' + symbol
+        node = node.value
+    symbol = node.id + '.' + symbol
 
 def modifyDriverArgs(functions, _ast, marker):
     args = []
@@ -140,11 +204,12 @@ def modifyDriverArgs(functions, _ast, marker):
                 st[target.id] = node
             elif isAttribute(target):
                 # If symbol has an attribute e.g. obj.attr, then try to modify it 
-                uid = '%s.%s' % (target.value.id, target.attr)
-                logger.info('Processing symbol with attribute %s' % uid)
+                symbol = getSymbol(target)
+                # % (target.value.id, target.attr)
+                logger.info('Processing symbol with attribute: %s' % symbol)
                 modified = modifyRHS(node, args, arg_num, marker)
                 arg_num = arg_num + 1 if modified else arg_num
-                st[uid] = node
+                st[symbol] = node
             else:
                 logger.error('Encountered a symbol with an unknown target type.')
 
@@ -196,16 +261,6 @@ def modifyDriverArgs(functions, _ast, marker):
             arg_num += 1
     return args
 
-def getFunctionCallers(_ast):
-    ''' Returns a dictionary of function calls mapped to instances '''
-    functions = {}
-    for node in ast.walk(_ast):
-        if isFunctionCall(node):
-            if not node.name in functions:
-                functions[node.name] = 0
-            functions[node.name] += 1
-    return functions
-
 def writeOutput(driver, main, skeleton, case):
     dest_dir = 'output'
     if not os.path.exists(dest_dir):
@@ -244,10 +299,14 @@ if __name__ == "__main__":
         sys.exit()
 
     functions = getFunctionDefs(_ast)
+    callers = getFunctionCallers(_ast)
     lineno = findSplitPoint(code, functions)
 
     # Generate modified source code
-    main, driver = splitSource(code, lineno)
+    main, driver = tryInlineMain(code, lineno, functions, callers)
+
+    if not main or not driver:
+        main, driver = splitSource(code, lineno)
 
     # Generate skeleton code
     _ast = ast.parse(main)
