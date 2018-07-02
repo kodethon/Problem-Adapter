@@ -31,6 +31,9 @@ def isLiteralStr(node):
 def isLiteralList(node):
     return node.__class__ == ast.List
 
+def isUnaryOp(node):
+    return node.__class__ == ast.UnaryOp
+
 def isVariable(node):
     return node.__class__ == ast.Name or node.__class__ == ast.Subscript
 
@@ -70,12 +73,14 @@ def parseList(node):
     for elt in node.elts:
         if isLiteralNum(elt):
             ar.append(elt.n) 
+        elif isUnaryOp(elt):
+            ar.append(-elt.operand.n)
         elif isLiteralStr(elt):
             ar.append(elt.s)
         elif isLiteralList(elt):
             ar.append(parseList(elt))
         else:
-            logger.error('Tried to parse unknown ele of type %s' % node.__class__)
+            logger.error('Tried to parse unknown ele of type %s' % elt.__class__)
     return ar
 
 def parseRHS(node):
@@ -288,6 +293,8 @@ def writeOutput(driver, main, skeleton, case):
     fp.close()
 
 if __name__ == "__main__":
+    logger.info('Processing %s' % sys.argv[1])
+
     # Read file contents
     fp = open(sys.argv[1])
     code = fp.read()
