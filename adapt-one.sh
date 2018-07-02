@@ -13,7 +13,7 @@ if [ ! -e "log" ]; then
     mkdir log
 fi
 
-python3_prints=$(cat "$file_path" | grep -P 'print\(.*\)')
+python3_prints=$(cat "$file_path" | grep -P 'print ?\(.*\)')
 if [ -z "$python3_prints" ]; then
     interpreter=python
 else
