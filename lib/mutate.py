@@ -169,7 +169,7 @@ if __name__ == "__main__":
         # Test the new sequence
         popen_results = test(dir_path, sequence_string)
         stdout = popen_results.stdout.read()
-        outputs_map[key] = stdout
+        outputs_map[key] = stdout.decode('utf-8')
         stderr = popen_results.stderr.read()
         
         # If the sequence is good, add it good sequences
@@ -219,8 +219,8 @@ if __name__ == "__main__":
         answer_path = os.path.join(answers_dir, str(i))
         fp = open(answer_path, 'w')
         key = getSequenceKey(sequence_string)
-        fp.write(str(outputs_map[key]))
-    
-        i += 1
+        fp.write(outputs_map[key])
+        fp.close() 
 
+        i += 1
 
