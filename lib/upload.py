@@ -28,6 +28,9 @@ SKELETON_FILE = 'skeleton.py'
 SOLUTION_FILE = 'solution.py'
 SUBMISSION_FOLDER = 'submission'
 
+def isPython3():
+    return sys.version_info >= (3, 0)
+
 def beautifyTitle(title):
     title = title.replace('-', ' ')
     return title.title()
@@ -140,6 +143,8 @@ if __name__ == "__main__":
         logger.error("%s is not set." % ASSIGNMENT_ID_ENV)
         sys.exit()
 
+    logger.info('Uploading %s...' % file_path)
+
     dir_path = os.path.dirname(file_path)
     description_path = os.path.join(dir_path, DESCRIPTION_FILE)
     if not os.path.exists(description_path):
@@ -169,6 +174,6 @@ if __name__ == "__main__":
         'cases' : cases,
         'Style' : 'Diff',
         'Description' : description,
-        'Run Command' : 'python %s/%s' % (AUTOGRADER_REL_PATH, DRIVER_FILE)
+        'Run Command' : '%s %s/%s' % ('python3' if isPython3() else 'python', AUTOGRADER_REL_PATH, DRIVER_FILE)
     }) 
     uploadFiles(dir_path)
