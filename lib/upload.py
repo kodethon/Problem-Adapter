@@ -19,6 +19,7 @@ HOST='https://kodethon.com:8080'
 IMPORT_URL = HOST + '/course/tests/import'
 UPLOAD_URL = HOST + '/containers/upload_file'
 
+PYTHON3_MARKER = '__PYTHON3__'
 AUTOGRADER_REL_PATH = '../autograder'
 HANDOUT_FOLDER = 'handout'
 CASES_ZIP = 'cases.zip'
@@ -28,8 +29,8 @@ SKELETON_FILE = 'skeleton.py'
 SOLUTION_FILE = 'solution.py'
 SUBMISSION_FOLDER = 'submission'
 
-def isPython3():
-    return sys.version_info >= (3, 0)
+def isPython3(file_path):
+    return os.path.exists(os.path.join(file_path, PYTHON3_MARKER))
 
 def beautifyTitle(title):
     title = title.replace('-', ' ')
@@ -169,11 +170,13 @@ if __name__ == "__main__":
         
     cases = generateCases(cases_path, answers_path)
     dirname = os.path.basename(dir_path)
+    interpreter = 'python3' if isPython3(file_path) else 'python'
     createTest({
         'test_name': beautifyTitle(dirname),
         'cases' : cases,
         'Style' : 'Diff',
         'Description' : description,
-        'Run Command' : '%s %s/%s' % ('python3' if isPython3() else 'python', AUTOGRADER_REL_PATH, DRIVER_FILE)
+        'Run Command' : '%s %s/%s' % (interpreter, AUTOGRADER_REL_PATH, DRIVER_FILE),
+        'Ignore Whitespace' : 'All'
     }) 
     uploadFiles(dir_path)

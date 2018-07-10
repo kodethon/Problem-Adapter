@@ -17,6 +17,7 @@ from shutil import copyfile
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+PYTHON3_MARKER = '__PYTHON3__'
 MAX_RUNTIME = 60
 MAX_ITERATIONS = 100
 NUM_CASES = 25
@@ -194,6 +195,16 @@ if __name__ == "__main__":
     answers_dir = os.path.join(dir_path, 'answers')
     if not os.path.exists(answers_dir):
         os.mkdir(answers_dir)
+    
+    # If is python3, create a marker denoting that it is
+    python3_marker = os.path.join(dir_path, PYTHON3_MARKER)
+    if isPython3():
+        if not os.path.exists(PYTHON3_MARKER):
+            open(python3_marker, 'a').close()
+    else:
+        if os.path.exists(python3_marker):
+            os.remove(python3_marker)
+        
 
     i = 0
     num_sequences = len(good_sequences)
