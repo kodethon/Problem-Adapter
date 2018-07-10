@@ -9,13 +9,15 @@ import pdb
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-DESCRIPTION_FILE = 'description.txt'
+DESCRIPTION_FILE_ALT = 'description.txt'
+DESCRIPTION_FILE = 'description.md'
 CASES_FOLDER = 'cases'
 USER_ID_ENV = 'KODETHON_USER_ID'
 ACCESS_TOKEN_ENV = 'KODETHON_ACCESS_TOKEN'
 ASSIGNMENT_ID_ENV = 'KODETHON_ASSIGNMENT_ID'
-IMPORT_URL = 'http://localhost:3456/course/tests/import'
-UPLOAD_URL = 'http://localhost:3456/containers/upload_file'
+HOST='https://kodethon.com:8080'
+IMPORT_URL = HOST + '/course/tests/import'
+UPLOAD_URL = HOST + '/containers/upload_file'
 
 AUTOGRADER_REL_PATH = '../autograder'
 HANDOUT_FOLDER = 'handout'
@@ -141,8 +143,10 @@ if __name__ == "__main__":
     dir_path = os.path.dirname(file_path)
     description_path = os.path.join(dir_path, DESCRIPTION_FILE)
     if not os.path.exists(description_path):
-        logger.error("%s does not exist!" % description_path)
-        sys.exit()
+        description_path = os.path.join(dir_path, DESCRIPTION_FILE_ALT)
+        if not os.path.exists(description_path):
+            logger.error("%s does not exist!" % description_path)
+            sys.exit()
 
     fp = open(description_path, 'r')
     description = fp.read().strip()
