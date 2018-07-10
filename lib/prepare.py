@@ -173,8 +173,8 @@ def findFunctionEnd(source, start):
     for i in range(start, len(lines)):
         line = lines[i]
         if len(line) > 0 and not line[0].isspace():
-            return i
-    return i + 1
+            return i - 1
+    return i
 
 def splitSource(source, lineno):
     ''' Splits the source at lineno and returns both parts '''
@@ -311,7 +311,6 @@ if __name__ == "__main__":
 
     # Generate modified source code
     main, driver = tryInlineMain(code, lineno, functions, callers)
-
     if not main or not driver:
         main, driver = splitSource(code, lineno)
 
