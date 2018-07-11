@@ -54,6 +54,10 @@ def isFunctionDef(node):
     ''' def FOOBAR '''
     return node.__class__ == ast.FunctionDef
 
+def isClassDef(node):
+    ''' class FOO '''
+    return node.__class__ == ast.ClassDef
+
 def isAssignment(node):
     return node.__class__ == ast.Assign
 
@@ -109,7 +113,7 @@ def getFunctionDefs(_ast):
     ''' Returns a dictionary of function definitions mapped to line numbers '''
     functions = {}
     for node in ast.walk(_ast):
-        if isFunctionDef(node):
+        if isFunctionDef(node) or isClassDef(node):
             functions[node.name] = node.lineno
     return functions
 
@@ -189,10 +193,16 @@ def removeFunctionBodies(_ast):
 
 def getSymbol(node):
     symbol = ''
-    while node.__class__ == ast.Attribute:
-        symbol = node.attr + '.' + symbol
+    if node.__class__ == ast.Attribute:
+        symbol = node.attr
         node = node.value
-    symbol = node.id + '.' + symbol
+        while node.__class__ == ast.Attribute:
+            symbol = node.attr + '.' + symbol
+            node = node.value
+        symbol = node.id + '.' + symbol
+    else:
+        symbol = node.id
+    return symbol
 
 def modifyDriverArgs(functions, _ast, marker):
     args = []
