@@ -43,7 +43,7 @@ class Mutation():
         input_set = []
         for ele in sequence:
             if isinstance(ele, six.string_types):
-                input_set.append(ele.split(''))
+                input_set.append(ele.split(' '))
             elif ele.__class__ == dict:
                 continue
             elif ele.__class__ == list:
