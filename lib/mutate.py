@@ -39,6 +39,7 @@ class Mutation():
         return [item for sublist in l for item in sublist]
 
     def generateInputSet(self, sequence):
+        ''' Generates a list mapping index in the sequence to a list of potential values '''
         input_set = []
         for ele in sequence:
             if isinstance(ele, six.string_types):
@@ -48,8 +49,10 @@ class Mutation():
             elif ele.__class__ == list:
                 s = []
                 for subele in ele:
-                    rs = self.flatten(self.generateInputSet(subele))
-                    s.append(rs)
+                    #rs = self.flatten(self.generateInputSet(subele))
+                    #s.append(rs)
+                    s.append([subele])
+                        
                 input_set.append(self.flatten(s))
             else:
                 input_set.append([ele])
@@ -130,6 +133,7 @@ if __name__ == "__main__":
     dir_path = sys.argv[1]
     test_path = os.path.join(dir_path, SEED_FILE)
     original_sequence = json.loads(open(test_path).read())
+
     if len(original_sequence) == 0:
         logger.error('No inputs to mutate, exiting...')
         sys.exit()
