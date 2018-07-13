@@ -1,6 +1,6 @@
 category=$1
 
-if [ -e "$category" ]; then
+if [ ! -e "$category" ]; then
     echo "$category does not exist!"
     exit
 fi
@@ -10,5 +10,6 @@ export $(sed -e 's/:[^:\/\/]/=/g;s/$//g;s/ *=/=/g' credentials.yml)
 
 for problem in $category/*; do
     problem_name=$(basename -- "$problem")
-    python lib/upload.py output/$problem_name
+    cd "output/$problem_name" && zip -r cases.zip cases > /dev/null; cd ../..
+    python lib/upload.py "output/$problem_name"
 done
