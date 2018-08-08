@@ -38,24 +38,24 @@ class Mutation():
     def flatten(self, l):
         return [item for sublist in l for item in sublist]
 
+    def generateInputs(self, ele):
+        inputs = []
+        if isinstance(ele, six.string_types):
+            inputs = ele.split(' ')
+        elif ele.__class__ == dict or ele.__class__ == list:
+            s = []
+            for subele in ele:
+                s.append(self.generateInputs(subele))
+            inputs = self.flatten(s)
+        else:
+            inputs = [ele]
+        return inputs
+
     def generateInputSet(self, sequence):
         ''' Generates a list mapping index in the sequence to a list of potential values '''
         input_set = []
         for ele in sequence:
-            if isinstance(ele, six.string_types):
-                input_set.append(ele.split(' '))
-            elif ele.__class__ == dict:
-                continue
-            elif ele.__class__ == list:
-                s = []
-                for subele in ele:
-                    #rs = self.flatten(self.generateInputSet(subele))
-                    #s.append(rs)
-                    s.append([subele])
-                        
-                input_set.append(self.flatten(s))
-            else:
-                input_set.append([ele])
+            input_set.append(self.generateInputs(ele)) 
         return input_set
        
     def getFromInputSet(self):
