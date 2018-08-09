@@ -6,6 +6,7 @@ import astor
 import json
 import os
 import logging
+import re
 
 import pdb
 
@@ -108,6 +109,28 @@ def modifyRHS(rhs, args, arg_num, marker):
         return True
     return False
 
+def fixIndent(lines):
+    line = lines[0]
+    indent = ''
+    for c in line:
+        if c.isspace():
+            indent += c
+        else:
+            break
+    if len(indent) == 0:
+        return lines
+    regex = re.compile(indent)
+    for i, line in enumerate(lines):
+        lines[i] = regex.sub('', lines[i], 1)
+    return lines
+
+def removeReturnStatements(lines):
+    new_lines = []
+    for line in lines:
+        if 'return' not in line:
+            new_lines.append(line)
+    return new_lines
+
 ### OUTLINE
 def getFunctionDefs(_ast):
     ''' Returns a dictionary of function definitions mapped to line numbers '''
@@ -128,44 +151,64 @@ def getFunctionCallers(_ast):
             functions[func_name] += 1
     return functions
 
+def getFunctionCallersNoArgs(_ast):
+    functions_with_no_args = []
+    for node in ast.walk(_ast):
+        # Only consider function calls
+        if isFunctionCall(node):
+            func_name = getFunctionName(node) 
+
+            # Only consider functions with no args
+            if len(node.args) == 0 and func_name not in functions_with_no_args:
+                functions_with_no_args.append(func_name)
+    return functions_with_no_args
+
 def tryInlineMain(code, split_point, functions, callers):
-    if 'main' not in functions or 'main' not in callers:
-        return None, None
-    else:
-        lineno = functions['main']
-        num_callers = callers['main']
-        if split_point > lineno and num_callers == 1:
-            main, driver = splitSource(code, lineno)
+    main, driver = splitSource(code, split_point)
+    _ast = ast.parse(driver)
+    functions_no_args = getFunctionCallersNoArgs(_ast)
+    for candidate in functions_no_args:
+        num_callers = callers[candidate]
+        if num_callers != 1:
+            continue
+            
+        # Find the 'main' function body
+        main_function_start = -1
+        main_function_end = -1
+        lineno = functions[candidate]
+        _ast = ast.parse(main)
+        #main, driver = splitSource(code, lineno - 1)
+        for node in ast.walk(_ast):
+            if not isFunctionDef(node):
+                continue
+            func_name = getFunctionName(node)
+            if func_name != candidate:
+                continue
 
-            # Find the 'main' function body
-            main_function_start = -1
-            main_function_end = -1
-            _ast = ast.parse(main)
-            for node in ast.walk(_ast):
-                if not isFunctionDef(node):
-                    continue
-                func_name = getFunctionName(node)
-                if func_name != 'main':
-                    continue
-                main_function_start = node.lineno
-                main_function_end = findFunctionEnd(main, node.lineno)
-                break
-                       
-            lines = main.split("\n")
-            main_function = "\n".join(lines[main_function_start:main_function_end])
-            # main_function_start = lineno of 'def main', subtract 1 from it to get the line before it
-            main = "\n".join(lines[0:main_function_start - 1]) + "\n".join(lines[main_function_end:])
+            main_function_start = node.lineno
+            main_function_end = findFunctionEnd(main, node.lineno) + 1
+            break
 
-            _ast = ast.parse(driver)
-            for node in ast.walk(_ast):
-                if not isFunctionCall(node):
-                    continue
-                func_name = getFunctionName(node)
-                if func_name != 'main':
-                    continue
-                lines = driver.split("\n")
-                lines[node.lineno - 1] = main_function 
-                return main, "\n".join(lines)
+        # Create the code
+        lines = main.split("\n")
+        main_function_lines = fixIndent(lines[main_function_start:main_function_end])
+        main_function_lines = removeReturnStatements(main_function_lines)
+        main_function = "\n".join(main_function_lines)
+
+        # Note: main_function_start = lineno of 'def main', subtract 1 from it to get the line before it
+        main = "\n".join(lines[0:main_function_start - 1]) + "\n".join(lines[main_function_end:])
+        
+        # Inline the code
+        _ast = ast.parse(driver)
+        for node in ast.walk(_ast):
+            if not isFunctionCall(node):
+                continue
+            func_name = getFunctionName(node)
+            if func_name != candidate:
+                continue
+            lines = driver.split("\n")
+            lines[node.lineno - 1] = main_function 
+            return main, "\n".join(lines)
 
 def findSplitPoint(source, functions):
     ''' Line of code where functions definitions stop '''
@@ -177,13 +220,13 @@ def findFunctionEnd(source, start):
     for i in range(start, len(lines)):
         line = lines[i]
         if len(line) > 0 and not line[0].isspace():
-            return i - 1
+            return i
     return i
 
 def splitSource(source, lineno):
     ''' Splits the source at lineno and returns both parts '''
-    lines = source.split("\n")
-    return "\n".join(lines[0:lineno + 1]), "\n".join(lines[lineno + 1:])
+    lines = source.splitlines()
+    return "\n".join(lines[0:lineno]), "\n".join(lines[lineno:])
 
 def removeFunctionBodies(_ast):
     for node in ast.walk(_ast):
@@ -250,7 +293,7 @@ def modifyDriverArgs(functions, _ast, marker):
                     continue
 
                 logger.debug("Processing argument variable %s for function %s" % (var_name, func_name))
-
+                
                 rhs = st[var_name]
                 if rhs == None:
                     continue
@@ -277,7 +320,7 @@ def modifyDriverArgs(functions, _ast, marker):
     return args
 
 def writeOutput(driver, main, skeleton, case):
-    dest_dir = 'output'
+    dest_dir = 'dist'
     if not os.path.exists(dest_dir):
         os.mkdir(dest_dir)
 
