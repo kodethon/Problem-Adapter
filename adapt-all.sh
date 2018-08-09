@@ -3,10 +3,10 @@ for category in $1/*; do
         for problem in $subcategory/*; do
             problem_name=$(basename -- "$problem")
 
-            if [ -e "output/$problem_name" ]; then
+            #if [ ! -e "output/$problem_name/cases" ]; then
                 echo "Processing $problem..."
-                sh adapt-one.sh $problem/$problem_name.py
-            fi
+                sh adapt-one.sh $problem/$problem_name.py &
+            #fi
         done
     done
 done
