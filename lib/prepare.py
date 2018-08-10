@@ -167,6 +167,8 @@ def tryInlineMain(code, split_point, functions, callers):
     main, driver = splitSource(code, split_point)
     _ast = ast.parse(driver)
     functions_no_args = getFunctionCallersNoArgs(_ast)
+    if len(functions_no_args) == 0:
+        return None, None
     for candidate in functions_no_args:
         num_callers = callers[candidate]
         if num_callers != 1:
@@ -361,7 +363,6 @@ if __name__ == "__main__":
     functions = getFunctionDefs(_ast)
     callers = getFunctionCallers(_ast)
     lineno = findSplitPoint(code, functions)
-
     # Generate modified source code
     main, driver = tryInlineMain(code, lineno, functions, callers)
     if not main or not driver:
