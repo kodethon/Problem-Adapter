@@ -10,6 +10,5 @@ export $(sed -e 's/:[^:\/\/]/=/g;s/$//g;s/ *=/=/g' config/credentials.yml)
 
 for problem in $category/*; do
     problem_name=$(basename -- "$problem")
-    cd "output/$problem_name" && zip -r cases.zip cases > /dev/null; cd ../..
-    python lib/upload.py "output/$problem_name"
+    sh upload-one.sh dist/$problem_name
 done
