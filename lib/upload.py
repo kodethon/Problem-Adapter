@@ -5,6 +5,7 @@ import json
 import requests
 import base64
 import pdb
+import yaml
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -15,6 +16,7 @@ CASES_FOLDER = 'cases'
 USER_ID_ENV = 'KODETHON_USER_ID'
 ACCESS_TOKEN_ENV = 'KODETHON_ACCESS_TOKEN'
 ASSIGNMENT_ID_ENV = 'KODETHON_ASSIGNMENT_ID'
+PROBLEM_CATEGORY = 'KODETHON_PROBLEM_CATEGORY'
 HOST='https://kodethon.com:8080'
 IMPORT_URL = HOST + '/course/tests/import'
 UPLOAD_URL = HOST + '/containers/upload_file'
@@ -28,6 +30,12 @@ MAIN_FILE = 'main.py'
 SKELETON_FILE = 'skeleton.py'
 SOLUTION_FILE = 'solution.py'
 SUBMISSION_FOLDER = 'submission'
+
+with open("config/credentials.yml", 'r') as stream:
+    try:
+        config = yaml.load(stream)
+    except yaml.YAMLError as exc:
+        logger.error(exc)
 
 def isPython3(file_path):
     return os.path.exists(os.path.join(file_path, PYTHON3_MARKER))
@@ -51,9 +59,9 @@ def generateCases(cases_path, answers_path):
 
 def createTest(test):
     package = {
-        'user_id' : os.environ[USER_ID_ENV],
-        'access_token' : os.environ[ACCESS_TOKEN_ENV],
-        'name' : os.environ[ASSIGNMENT_ID_ENV],
+        'user_id' : config[USER_ID_ENV],
+        'access_token' : config[ACCESS_TOKEN_ENV],
+        'name' : config[ASSIGNMENT_ID_ENV],
         'test_settings'  : json.dumps(test),
     }
     #print json.dumps(package, indent=4, sort_keys=True)
@@ -68,9 +76,9 @@ def uploadFiles(dirpath):
     content = fp.read()
     fp.close()
     package = {
-        'user_id' : os.environ[USER_ID_ENV],
-        'access_token' : os.environ[ACCESS_TOKEN_ENV],
-        'name' : os.environ[ASSIGNMENT_ID_ENV],       
+        'user_id' : config[USER_ID_ENV],
+        'access_token' : config[ACCESS_TOKEN_ENV],
+        'name' : config[ASSIGNMENT_ID_ENV],       
         'file_name' : CASES_ZIP,
         'destination' : os.path.join('/', title, os.path.basename(AUTOGRADER_REL_PATH)),
         'file_content' : base64.b64encode(content)
@@ -82,9 +90,9 @@ def uploadFiles(dirpath):
     content = fp.read()
     fp.close()
     package = {
-        'user_id' : os.environ[USER_ID_ENV],
-        'access_token' : os.environ[ACCESS_TOKEN_ENV],
-        'name' : os.environ[ASSIGNMENT_ID_ENV],       
+        'user_id' : config[USER_ID_ENV],
+        'access_token' : config[ACCESS_TOKEN_ENV],
+        'name' : config[ASSIGNMENT_ID_ENV],       
         'file_name' : DRIVER_FILE,
         'destination' : os.path.join('/', title, os.path.basename(AUTOGRADER_REL_PATH)),
         'file_content' : base64.b64encode(content)
@@ -96,9 +104,9 @@ def uploadFiles(dirpath):
     content = fp.read()
     fp.close()
     package = {
-        'user_id' : os.environ[USER_ID_ENV],
-        'access_token' : os.environ[ACCESS_TOKEN_ENV],
-        'name' : os.environ[ASSIGNMENT_ID_ENV],       
+        'user_id' : config[USER_ID_ENV],
+        'access_token' : config[ACCESS_TOKEN_ENV],
+        'name' : config[ASSIGNMENT_ID_ENV],       
         'file_name' : MAIN_FILE,
         'destination' : os.path.join('/', title, os.path.basename(HANDOUT_FOLDER)),
         'file_content' : base64.b64encode(content)
@@ -110,9 +118,9 @@ def uploadFiles(dirpath):
     content = fp.read()
     fp.close()
     package = {
-        'user_id' : os.environ[USER_ID_ENV],
-        'access_token' : os.environ[ACCESS_TOKEN_ENV],
-        'name' : os.environ[ASSIGNMENT_ID_ENV],       
+        'user_id' : config[USER_ID_ENV],
+        'access_token' : config[ACCESS_TOKEN_ENV],
+        'name' : config[ASSIGNMENT_ID_ENV],       
         'file_name' : MAIN_FILE,
         'destination' : os.path.join('/', title, os.path.basename(SUBMISSION_FOLDER)),
         'file_content' : base64.b64encode(content)
@@ -132,15 +140,15 @@ if __name__ == "__main__":
     if file_path[len(file_path) - 1] != '/':
         file_path += '/'
 
-    if os.environ[USER_ID_ENV] == None:
+    if USER_ID_ENV not in config:
         logger.error("%s is not set." % USER_ID_ENV)
         sys.exit()
 
-    if os.environ[ACCESS_TOKEN_ENV] == None:
+    if ACCESS_TOKEN_ENV not in config:
         logger.error("%s is not set." % ACCESS_TOKEN_ENV)
         sys.exit()
 
-    if os.environ[ASSIGNMENT_ID_ENV] == None:
+    if ASSIGNMENT_ID_ENV not in config:
         logger.error("%s is not set." % ASSIGNMENT_ID_ENV)
         sys.exit()
 
@@ -177,6 +185,7 @@ if __name__ == "__main__":
         'Style' : 'Diff',
         'Description' : description,
         'Run Command' : '%s %s/%s' % (interpreter, AUTOGRADER_REL_PATH, DRIVER_FILE),
-        'Ignore Whitespace' : 'All'
+        'Ignore Whitespace' : 'All',
+        'Category' : config[PROBLEM_CATEGORY]
     }) 
     uploadFiles(dir_path)

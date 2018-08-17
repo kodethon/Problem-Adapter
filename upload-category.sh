@@ -6,7 +6,7 @@ if [ ! -e "$category" ]; then
 fi
 
 # Export ENV variables
-export $(sed -e 's/:[^:\/\/]/=/g;s/$//g;s/ *=/=/g' config/credentials.yml)
+#export $(sed -e 's/:[^:\/\/]/=/g;s/$//g;s/ *=/=/g' config/credentials.yml)
 
 for problem in $category/*; do
     problem_name=$(basename -- "$problem")
