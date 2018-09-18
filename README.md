@@ -20,29 +20,35 @@ sh adapt-one.sh DIR_PATH/PYTHON_FILE_NAME.py
 
 ## Manual Usage:
 
-1. Create a folder called 'output' with a PYTHON_FILE_NAME folder inside of it. 
+### Step 1. 
 
 ```
 python lib/prepare.py DIR_PATH/PYTHON_FILE_NAME.py
 ```
 
+Creates a folder called 'output' with a PYTHON_FILE_NAME folder inside of it. 
 The below files should be created in the folder:
     - driver.py
     - solution.py
     - seed.json
     - skeleton.py
 
-2. Create a 'cases' folder in the PYTHON_FILE_NAME folder filled with generated test cases.
+### Step 2. 
 
 ``` 
 python lib/mutate.py output/PYTHON_FILE_NAME
 ```
 
-3. Adapt the generated files to Kodethon's problem format.
+Creates a 'cases' folder in the PYTHON_FILE_NAME folder filled with generated test cases.
+
+
+### Step 3.
 
 ```
 python lib/upload.py output/PYTHON_FILE_NAME
 ```
+
+Adapts the generated files to Kodethon's problem format.
 
 ### Uploading:
 
@@ -53,22 +59,24 @@ config/credentials.yml
 
 The folder should contain the folders named after the problem
 
-## Getting the Programs
+# Getting the Programs
 
 scrape.py and parse.py must be in same directory. 
 
-### Scraping
+## Scraping
 
-1. In scrape.py, edit pages variable to point to a dictionary of
+### Step 1.
+In scrape.py, edit pages variable to point to a dictionary of
 links, where the key is the subtopic and the value is a list of URLs.
 
-2. To scrape, call scrape_links and pass in the PAGES variable and the
+### Step 2.
+To scrape, call scrape_links and pass in the PAGES variable and the
 TOPIC as a string.
     - Generates directories to path 'raw/TOPIC/SUBTOPIC' (parallel to
       scrape.py and parse.py) and creates
       an HTML file for raw scraped HTML from each link.
 
-### Parsing
+## Parsing
 
-1. In parse.py, change TOPIC to TOPIC used in scrape.py.
+In parse.py, change TOPIC to TOPIC used in scrape.py.
 
