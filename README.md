@@ -1,8 +1,8 @@
 # Usage
 
-## Automated Usage:
+## Automated Usage
 
-### Batch Usage:
+### Batch
     
 ```
 sh adapt-all.sh FOLDER_PATH
@@ -12,13 +12,13 @@ The folder should have multiple directories; each directory should have a
 python folder containing the python file. The python file should have a
 unique name; it is advisable to name the file after the problem name.
 
-### Individual Usage:
+### Individual
 
 ```
 sh adapt-one.sh DIR_PATH/PYTHON_FILE_NAME.py
 ```
 
-## Manual Usage:
+## Manual Usage
 
 ### Step 1. 
 
@@ -50,7 +50,7 @@ python lib/upload.py output/PYTHON_FILE_NAME
 
 Adapts the generated files to Kodethon's problem format.
 
-### Uploading:
+### Uploading
 
 1. Rename and update config/credentials.yml.sample to
 config/credentials.yml
