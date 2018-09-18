@@ -2,6 +2,20 @@
 
 A tool to convert single file python programs to a driver program, stub code, and test cases.
 
+# Program Format
+
+The python programs have to be a single file with the driver code defined after the function definitions.
+
+For example:
+``` python
+# Function definition(s)
+def add(a, b):
+    return a + b
+
+# Driver code
+add(1, 2)
+```
+
 # Usage
 
 ## Manual Usage
@@ -66,20 +80,9 @@ config/credentials.yml
 
 The folder should contain the folders named after the problem
 
-# Getting the Programs
+# Getting Programs (Optional)
 
 The programs can either be manually written or scraped from an external source. 
-In either case, the programs has to be a single file and the driver has to be after the function definitions.
-
-For example:
-``` python
-# Function definition(s)
-def add(a, b):
-    return a + b
-
-# Driver code
-add(1, 2)
-```
 
 ## Scraping
 
