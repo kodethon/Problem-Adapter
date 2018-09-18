@@ -61,7 +61,7 @@ The folder should contain the folders named after the problem
 
 # Getting the Programs
 
-scrape.py and parse.py must be in same directory. 
+scrape.py and parse.py must be in the same directory. 
 
 ## Scraping
 
@@ -78,5 +78,5 @@ TOPIC as a string.
 
 ## Parsing
 
-In parse.py, change TOPIC to TOPIC used in scrape.py.
+In parse.py, change TOPIC to the TOPIC used in scrape.py.
 
