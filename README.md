@@ -4,24 +4,6 @@ A tool to convert single file python programs to a driver program, stub code, an
 
 # Usage
 
-## Automated Usage
-
-### Batch
-    
-```
-sh adapt-all.sh FOLDER_PATH
-```
-
-The folder should have multiple directories; each directory should have a
-python folder containing the python file. The python file should have a
-unique name; it is advisable to name the file after the problem name.
-
-### Individual
-
-```
-sh adapt-one.sh DIR_PATH/PYTHON_FILE_NAME.py
-```
-
 ## Manual Usage
 
 ### Step 1 
@@ -54,7 +36,28 @@ python lib/upload.py output/PYTHON_FILE_NAME
 
 Adapts the generated files to Kodethon's problem format.
 
-### Uploading
+
+## Automated Usage
+
+Automated usage does the same thing as the manual usage except less commands have to be run.
+
+### Batch
+    
+```
+sh adapt-all.sh FOLDER_PATH
+```
+
+The folder should have multiple directories; each directory should have a
+python folder containing the python file. The python file should have a
+unique name; it is advisable to name the file after the problem name.
+
+### Individual
+
+```
+sh adapt-one.sh DIR_PATH/PYTHON_FILE_NAME.py
+```
+
+## Uploading
 
 1. Rename and update config/credentials.yml.sample to
 config/credentials.yml
@@ -65,9 +68,22 @@ The folder should contain the folders named after the problem
 
 # Getting the Programs
 
-scrape.py and parse.py must be in the same directory. 
+The programs can either be manually written or scraped from an external source. 
+In either case, the programs has to be a single file and the driver has to be after the function definitions.
+
+For example:
+``` python
+# Function definition(s)
+def add(a, b):
+    return a + b
+
+# Driver code
+add(1, 2)
+```
 
 ## Scraping
+
+scrape.py and parse.py must be in the same directory. 
 
 ### Step 1
 In scrape.py, edit pages variable to point to a dictionary of
