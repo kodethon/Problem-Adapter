@@ -1,3 +1,7 @@
+# Description
+
+A tool to convert single file python programs to a driver program, stub code, and test cases.
+
 # Usage
 
 ## Automated Usage
@@ -20,7 +24,7 @@ sh adapt-one.sh DIR_PATH/PYTHON_FILE_NAME.py
 
 ## Manual Usage
 
-### Step 1. 
+### Step 1 
 
 ```
 python lib/prepare.py DIR_PATH/PYTHON_FILE_NAME.py
@@ -33,7 +37,7 @@ The below files should be created in the folder:
     - seed.json
     - skeleton.py
 
-### Step 2. 
+### Step 2 
 
 ``` 
 python lib/mutate.py output/PYTHON_FILE_NAME
@@ -42,7 +46,7 @@ python lib/mutate.py output/PYTHON_FILE_NAME
 Creates a 'cases' folder in the PYTHON_FILE_NAME folder filled with generated test cases.
 
 
-### Step 3.
+### Step 3
 
 ```
 python lib/upload.py output/PYTHON_FILE_NAME
@@ -65,11 +69,11 @@ scrape.py and parse.py must be in the same directory.
 
 ## Scraping
 
-### Step 1.
+### Step 1
 In scrape.py, edit pages variable to point to a dictionary of
 links, where the key is the subtopic and the value is a list of URLs.
 
-### Step 2.
+### Step 2
 To scrape, call scrape_links and pass in the PAGES variable and the
 TOPIC as a string.
 - Generates directories to path 'raw/TOPIC/SUBTOPIC' (parallel to
