@@ -72,9 +72,9 @@ links, where the key is the subtopic and the value is a list of URLs.
 ### Step 2.
 To scrape, call scrape_links and pass in the PAGES variable and the
 TOPIC as a string.
-    - Generates directories to path 'raw/TOPIC/SUBTOPIC' (parallel to
-      scrape.py and parse.py) and creates
-      an HTML file for raw scraped HTML from each link.
+- Generates directories to path 'raw/TOPIC/SUBTOPIC' (parallel to
+  scrape.py and parse.py) and creates
+  an HTML file for raw scraped HTML from each link.
 
 ## Parsing
 
