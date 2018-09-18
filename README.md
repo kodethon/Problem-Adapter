@@ -1,8 +1,12 @@
-## Usage
+# Usage
 
-### Automated Usage:
+## Automated Usage:
 
+### Batch Usage:
+    
+```
 sh adapt-all.sh FOLDER_PATH
+```
 
 The folder should have multiple directories; each directory should have a
 python folder containing the python file. The python file should have a
@@ -10,26 +14,35 @@ unique name; it is advisable to name the file after the problem name.
 
 ### Individual Usage:
 
-sh adapt-one.sh DIR_PATH/PYTHON_FILE_NAME.py
+    ```
+    sh adapt-one.sh DIR_PATH/PYTHON_FILE_NAME.py
+    ```
 
-### Manual Usage:
+## Manual Usage:
 
-1. python lib/prepare.py DIR_PATH/PYTHON_FILE_NAME.py
+1. Create a folder called 'output' with a PYTHON_FILE_NAME folder inside of it. 
 
-    - Creates a folder called 'output' with a PYTHON_FILE_NAME folder
-      inside of it. Inside this folder are several files:
-        - driver.py
-        - solution.py
-        - seed.json
-        - skeleton.py
+```
+python lib/prepare.py DIR_PATH/PYTHON_FILE_NAME.py
+```
 
-2. python lib/mutate.py output/PYTHON_FILE_NAME
+The below files should be created in the folder:
+    - driver.py
+    - solution.py
+    - seed.json
+    - skeleton.py
 
-    - Creates a 'cases' folder in the PYTHON_FILE_NAME folder
+2. Create a 'cases' folder in the PYTHON_FILE_NAME folder filled with generated test cases.
 
-3. python lib/upload.py output/PYTHON_FILE_NAME
+``` 
+python lib/mutate.py output/PYTHON_FILE_NAME
+```
 
-    - Adapts the generated files to Kodethon's problem format
+3. Adapt the generated files to Kodethon's problem format.
+
+```
+python lib/upload.py output/PYTHON_FILE_NAME
+```
 
 ### Uploading:
 
