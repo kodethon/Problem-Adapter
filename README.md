@@ -14,9 +14,9 @@ unique name; it is advisable to name the file after the problem name.
 
 ### Individual Usage:
 
-    ```
-    sh adapt-one.sh DIR_PATH/PYTHON_FILE_NAME.py
-    ```
+```
+sh adapt-one.sh DIR_PATH/PYTHON_FILE_NAME.py
+```
 
 ## Manual Usage:
 
