@@ -18,7 +18,7 @@ add(1, 2)
 
 ## Usage
 
-### Manual Usage
+### Manual
 
 #### Step 1 
 
@@ -28,10 +28,10 @@ python lib/prepare.py DIR_PATH/PYTHON_FILE_NAME.py
 
 Creates a folder called 'output' with a PYTHON_FILE_NAME folder inside of it. 
 The below files should be created in the folder:
-    - driver.py
-    - solution.py
-    - seed.json
-    - skeleton.py
+- driver.py
+- solution.py
+- seed.json
+- skeleton.py
 
 #### Step 2 
 
@@ -51,7 +51,7 @@ python lib/upload.py output/PYTHON_FILE_NAME
 Adapts the generated files to Kodethon's problem format.
 
 
-### Automated Usage
+### Automated
 
 Automated usage does the same thing as the manual usage except less commands have to be run.
 
