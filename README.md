@@ -1,6 +1,6 @@
 ## Description
 
-A tool to convert single file python programs to a driver, stub code, solution, and test cases. 
+A tool to convert single-file python programs to a driver, stub, and solution code. Also automatically generates test cases based on the provided driver code in the python program.
 
 This repository also provides a script to optionally upload the generated files to Kodethon's problem library.
 
