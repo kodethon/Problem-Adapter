@@ -19,17 +19,18 @@ ASSIGNMENT_ID_ENV = 'KODETHON_ASSIGNMENT_ID'
 PROBLEM_CATEGORY = 'KODETHON_PROBLEM_CATEGORY'
 HOST='https://kodethon.com:8080'
 IMPORT_URL = HOST + '/course/tests/import'
-UPLOAD_URL = HOST + '/containers/upload_file'
+UPLOAD_URL = HOST + '/file/upload'
 
 PYTHON3_MARKER = '__PYTHON3__'
 AUTOGRADER_REL_PATH = '../autograder'
 HANDOUT_FOLDER = 'handout'
 CASES_ZIP = 'cases.zip'
 DRIVER_FILE = 'driver.py'
-MAIN_FILE = 'main.py'
+MAIN_FILE = 'solution.py'
 SKELETON_FILE = 'skeleton.py'
 SOLUTION_FILE = 'solution.py'
 SUBMISSION_FOLDER = 'submission'
+REFERENCE_FOLDER = '.ref'
 
 with open("config/credentials.yml", 'r') as stream:
     try:
@@ -70,7 +71,7 @@ def createTest(test):
 def uploadFiles(dirpath):
     dirname = os.path.basename(dirpath)
     title = beautifyTitle(dirname)   
-    
+
     # Upload cases
     fp = open(os.path.join(dirpath, CASES_ZIP), 'r')
     content = fp.read()
@@ -80,7 +81,7 @@ def uploadFiles(dirpath):
         'access_token' : config[ACCESS_TOKEN_ENV],
         'name' : config[ASSIGNMENT_ID_ENV],       
         'file_name' : CASES_ZIP,
-        'destination' : os.path.join('/', title, os.path.basename(AUTOGRADER_REL_PATH)),
+        'file_path' : os.path.join('/', title, os.path.basename(AUTOGRADER_REL_PATH)),
         'file_content' : base64.b64encode(content)
     }
     r = requests.post(UPLOAD_URL, data = package)
@@ -94,7 +95,7 @@ def uploadFiles(dirpath):
         'access_token' : config[ACCESS_TOKEN_ENV],
         'name' : config[ASSIGNMENT_ID_ENV],       
         'file_name' : DRIVER_FILE,
-        'destination' : os.path.join('/', title, os.path.basename(AUTOGRADER_REL_PATH)),
+        'file_path' : os.path.join('/', title, os.path.basename(AUTOGRADER_REL_PATH)),
         'file_content' : base64.b64encode(content)
     }
     r = requests.post(UPLOAD_URL, data = package)
@@ -108,8 +109,9 @@ def uploadFiles(dirpath):
         'access_token' : config[ACCESS_TOKEN_ENV],
         'name' : config[ASSIGNMENT_ID_ENV],       
         'file_name' : MAIN_FILE,
-        'destination' : os.path.join('/', title, os.path.basename(HANDOUT_FOLDER)),
-        'file_content' : base64.b64encode(content)
+        'file_path' : os.path.join('/', title, os.path.basename(HANDOUT_FOLDER)),
+        'file_content' : base64.b64encode(content),
+        'overwrite' : True
     }
     r = requests.post(UPLOAD_URL, data = package)
 
@@ -122,8 +124,24 @@ def uploadFiles(dirpath):
         'access_token' : config[ACCESS_TOKEN_ENV],
         'name' : config[ASSIGNMENT_ID_ENV],       
         'file_name' : MAIN_FILE,
-        'destination' : os.path.join('/', title, os.path.basename(SUBMISSION_FOLDER)),
+        'file_path' : os.path.join('/', title, os.path.basename(SUBMISSION_FOLDER)),
+        'file_content' : base64.b64encode(content),
+        'overwrite' : True
+    }
+    r = requests.post(UPLOAD_URL, data = package)
+
+    # Upload solution file
+    fp = open(os.path.join(dirpath, SOLUTION_FILE), 'r')
+    content = fp.read()
+    fp.close()
+    package = {
+        'user_id' : config[USER_ID_ENV],
+        'access_token' : config[ACCESS_TOKEN_ENV],
+        'name' : config[ASSIGNMENT_ID_ENV],       
+        'file_name' : MAIN_FILE,
+        'file_path' : os.path.join('/', title, REFERENCE_FOLDER),
         'file_content' : base64.b64encode(content)
+        'overwrite' : True
     }
     r = requests.post(UPLOAD_URL, data = package)
 
