@@ -140,7 +140,7 @@ def uploadFiles(dirpath):
         'name' : config[ASSIGNMENT_ID_ENV],       
         'file_name' : MAIN_FILE,
         'file_path' : os.path.join('/', title, REFERENCE_FOLDER),
-        'file_content' : base64.b64encode(content)
+        'file_content' : base64.b64encode(content),
         'overwrite' : True
     }
     r = requests.post(UPLOAD_URL, data = package)
