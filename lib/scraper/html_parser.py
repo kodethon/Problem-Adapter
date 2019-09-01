@@ -1,6 +1,39 @@
 from bs4 import BeautifulSoup
+from markdownify import markdownify as md
 import pdb
 import os
+import bs4
+
+class HtmlProcessor():
+    
+    def filterAny(self, ele):
+        if type(ele) is bs4.element.NavigableString: return
+        if type(ele) is bs4.element.Comment: return
+        filters = [self.practiceLinkDiv, self.responsiveTabsWrapper]
+        
+        for f in filters:
+            if f(ele):
+                ele.decompose()
+                break
+
+    def tryModifyLink(self, ele):
+        if ele.name == 'a':
+            href = ele.attrs['href']
+            if not href: return
+            if 'geeksforgeeks.org' in href:
+                ele.name = 'span'
+                del ele.attrs['href']
+
+    def practiceLinkDiv(self, ele):
+        return ele.get('id') == "practiceLinkDiv"
+
+    def responsiveTabsWrapper(self, ele):
+        class_names = ele.get('class')
+        if not class_names: return
+        return 'responsive-tabs-wrapper' in class_names
+
+    def script(self, ele):
+        return ele.name == "script"
 
 class HtmlParser():
     
@@ -24,6 +57,8 @@ class HtmlParser():
         # Set default output path to current directory
         self.with_output_path('output')
 
+        self.processor = HtmlProcessor()
+
     def with_output_path(self, output_path):
         self.output_path = output_path
         return self
@@ -40,13 +75,22 @@ class HtmlParser():
         self.problem_name = problem_name
         return self
 
+    def format_pre(self, ele):
+        return unicode(ele).replace("\r", "").replace("\n", "  \n    ").replace("\\\\", "\\")
+
     def find_description(self):
-        text = ''
-        for tag in self.soup.findAll("div", class_="entry-content"):
-            pdb.set_trace()
-            text += tag.contents
-            text +="\n"
-        return text
+        ele = self.soup.find("div", class_="entry-content")
+
+        self.traverseElement(ele)
+
+        return self.format_pre(ele)
+
+    def traverseElement(self, root):
+        for ele in root.children:
+            self.processor.filterAny(ele)
+            self.processor.tryModifyLink(ele)
+            if type(ele) is bs4.element.Tag:
+                self.traverseElement(ele)
 
     def find_solution(self):
         text = ''
@@ -64,8 +108,11 @@ class HtmlParser():
         if not os.path.exists(folder_path):
             self.create_problem_folder()
 
-        o = open(os.path.join(folder_path, "description.txt"), "w")
+        o = open(os.path.join(folder_path, "description.html"), "w")
         o.write(description.encode("utf-8"))
+        o.close()
+        o = open(os.path.join(folder_path, "description.md"), "w")
+        o.write(md(description).encode("utf-8"))
         o.close()
 
     def write_solution(self, solution):
@@ -86,7 +133,7 @@ class HtmlParser():
         return os.path.join(self.output_path, self.course_name, self.assignment_name, self.problem_name)
 
 
-path = '/home/fuzzy/python-problems/raw/algorithm-analysis/greedy-algorithms/greedy-algorithms-set-1-activity-selection-problem.html'
+path = '/home/fuzzy/test/raw/algorithm-analysis/greedy-algorithms/greedy-algorithms-set-1-activity-selection-problem.html'
 parser = HtmlParser(path)
 description = parser.find_description()
 solution =  parser.find_solution()
