@@ -1,9 +1,9 @@
-from bs4 import BeautifulSoup
-from markdownify import markdownify as md
 import pdb
 import os
-import bs4
 import subprocess
+
+import bs4
+from markdownify import markdownify as md
 
 class HtmlProcessor():
     
@@ -18,6 +18,9 @@ class HtmlProcessor():
                 break
 
     def tryModifyLink(self, ele):
+        """
+        If is a link to main website, replace with span tag
+        """
         if ele.name == 'a':
             href = ele.attrs['href']
             if not href: return
@@ -26,9 +29,15 @@ class HtmlProcessor():
                 del ele.attrs['href']
 
     def practiceLinkDiv(self, ele):
+        """
+        Specific element that should be ignored
+        """
         return ele.get('id') == "practiceLinkDiv"
 
     def responsiveTabsWrapper(self, ele):
+        """
+        Wrapper for solution code
+        """
         class_names = ele.get('class')
         if not class_names: return
         return 'responsive-tabs-wrapper' in class_names
@@ -40,7 +49,7 @@ class HtmlParser():
     
     def __init__(self, file_path):
         with open(path) as f:
-            self.soup = BeautifulSoup(f, 'html.parser')
+            self.soup = bs4.BeautifulSoup(f, 'html.parser')
 
         self.file_path = path
 
@@ -105,6 +114,9 @@ class HtmlParser():
         return text
 
     def write_description(self, description):
+        """
+        Writes 2 files, description.html and description.md in self.problem_folder_path
+        """
         folder_path = self.problem_folder_path()
         if not os.path.exists(folder_path):
             self.create_problem_folder()
