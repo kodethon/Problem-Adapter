@@ -3,6 +3,7 @@ from markdownify import markdownify as md
 import pdb
 import os
 import bs4
+import subprocess
 
 class HtmlProcessor():
     
@@ -107,12 +108,15 @@ class HtmlParser():
         folder_path = self.problem_folder_path()
         if not os.path.exists(folder_path):
             self.create_problem_folder()
-
-        o = open(os.path.join(folder_path, "description.html"), "w")
+        
+        html_file_path = os.path.join(folder_path, "description.html")
+        o = open(html_file_path, "w")
         o.write(description.encode("utf-8"))
         o.close()
+
         o = open(os.path.join(folder_path, "description.md"), "w")
-        o.write(md(description).encode("utf-8"))
+        md = subprocess.check_output(['node', 'html_2_md.js', html_file_path])
+        o.write(md)
         o.close()
 
     def write_solution(self, solution):
