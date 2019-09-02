@@ -1,21 +1,33 @@
 import pdb
 import os
 import subprocess
+import sys
 
 import bs4
 from markdownify import markdownify as md
 
 class HtmlProcessor():
     
+    def __init__(self):
+        self.done = False
+
     def filterAny(self, ele):
         if type(ele) is bs4.element.NavigableString: return
         if type(ele) is bs4.element.Comment: return
         filters = [self.practiceLinkDiv, self.responsiveTabsWrapper]
         
         for f in filters:
-            if f(ele):
+            if self.done or f(ele):
                 ele.decompose()
                 break
+
+    def checkIfDone(self, ele):
+        if self.done: return
+        if not hasattr(ele, 'contents'): 
+            self.done = 'References:' in ele
+        else:
+            self.done = 'References:' in ele.contents
+        if self.done: ele.decompose()
 
     def tryModifyLink(self, ele):
         """
@@ -40,7 +52,7 @@ class HtmlProcessor():
         """
         class_names = ele.get('class')
         if not class_names: return
-        return 'responsive-tabs-wrapper' in class_names
+        return 'responsive-tabs-wrapper' in class_names or 'responsive-tabs' in class_names
 
     def script(self, ele):
         return ele.name == "script"
@@ -97,6 +109,7 @@ class HtmlParser():
 
     def traverseElement(self, root):
         for ele in root.children:
+            self.processor.checkIfDone(ele)
             self.processor.filterAny(ele)
             self.processor.tryModifyLink(ele)
             if type(ele) is bs4.element.Tag:
@@ -148,13 +161,11 @@ class HtmlParser():
     def problem_folder_path(self):
         return os.path.join(self.output_path, self.course_name, self.assignment_name, self.problem_name)
 
-
-path = '/home/fuzzy/test/raw/algorithm-analysis/greedy-algorithms/greedy-algorithms-set-1-activity-selection-problem.html'
-parser = HtmlParser(path)
-description = parser.find_description()
-solution =  parser.find_solution()
-parser.write_solution(solution)
-parser.write_description(description)
-
-a = 1
-
+if __name__ == "__main__":
+    path = sys.argv[1]
+    #path = '/home/fuzzy/test/raw/algorithm-analysis/greedy-algorithms/greedy-algorithms-set-1-activity-selection-problem.html'
+    parser = HtmlParser(path)
+    description = parser.find_description()
+    solution =  parser.find_solution()
+    parser.write_solution(solution)
+    parser.write_description(description)
