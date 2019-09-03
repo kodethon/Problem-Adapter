@@ -75,7 +75,7 @@ class HtmlParser():
         self.with_course_name(os.path.basename(os.path.dirname(parent_path))) 
         
         # Set default output path to current directory
-        self.with_output_path('output')
+        self.with_output_path('../dist')
 
         self.processor = HtmlProcessor()
 
@@ -158,7 +158,7 @@ class HtmlParser():
             os.makedirs(folder_path) # creates parent directories if necessary
 
     def problem_folder_path(self):
-        return os.path.join(self.output_path, self.course_name, self.assignment_name, self.problem_name)
+        return os.path.join(self.output_path, self.problem_name)
 
 if __name__ == "__main__":
     path = sys.argv[1]

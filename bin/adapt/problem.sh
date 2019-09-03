@@ -23,11 +23,11 @@ fi
 echo "Using $interpreter..."
 
 # parse the python file
-$interpreter lib/prepare.py "$file_path" 2>> log/prepare.log
+$interpreter ../../lib/prepare.py "$file_path" 2>> ../../log/prepare.log
 
 if [ -e "$output_dir" ]; then
     # Generate cases folder
-    $interpreter lib/mutate.py "$output_dir" 2>> log/mutate.log
+    $interpreter ../../lib/mutate.py "$output_dir" 2>> ../../log/mutate.log
 
     # Zip up cases folder
     cwd=$(pwd)

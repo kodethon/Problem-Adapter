@@ -249,6 +249,7 @@ if __name__ == "__main__":
         'Description' : description,
         'Run Command' : '%s %s/%s' % (interpreter, AUTOGRADER_REL_PATH, DRIVER_FILE),
         'Ignore Whitespace' : 'All',
-        'Category' : config[PROBLEM_CATEGORY]
+        'Category' : config[PROBLEM_CATEGORY],
+        'Use Reference Program': True
     }) 
     uploadFiles(dir_path)

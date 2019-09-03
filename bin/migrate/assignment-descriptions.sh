@@ -6,6 +6,7 @@ for problem in $1/*; do
         echo $command
         $command
     else
-        echo "$dist_path/$problem_name does not exist..."
+        #echo "$dist_path/$problem_name does not exist..."
+        cp -r $problem $dist_path
     fi
 done

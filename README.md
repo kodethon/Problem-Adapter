@@ -78,7 +78,7 @@ sh adapt-one.sh DIR_PATH/PYTHON_FILE_NAME.py
 1. Rename and update config/credentials.yml.sample to
 config/credentials.yml
 2. Update the file accordingly
-3. sh upload-category.sh FOLDER_PATH
+3. sh upload-assignment.sh FOLDER_PATH
 
 The folder should contain the folders named after the problem
 
