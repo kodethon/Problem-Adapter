@@ -12,8 +12,8 @@ class HtmlProcessor():
         self.done = False
 
     def filterAny(self, ele):
-        if type(ele) is bs4.element.NavigableString: return
-        if type(ele) is bs4.element.Comment: return
+        if not ele: return
+        if issubclass(type(ele), bs4.element.NavigableString): return # Includes bs4.element.Comment
         filters = [self.practiceLinkDiv, self.responsiveTabsWrapper]
         
         for f in filters:
@@ -23,11 +23,9 @@ class HtmlProcessor():
 
     def checkIfDone(self, ele):
         if self.done: return
-        if not hasattr(ele, 'contents'): 
-            self.done = 'References:' in ele
-        else:
-            self.done = 'References:' in ele.contents
-        if self.done: ele.decompose()
+        if not issubclass(type(ele), bs4.element.NavigableString): 
+            self.done = 'References:' in ele.text
+            if self.done: ele.decompose()
 
     def tryModifyLink(self, ele):
         """
@@ -102,6 +100,7 @@ class HtmlParser():
 
     def find_description(self):
         ele = self.soup.find("div", class_="entry-content")
+        if not ele: return
 
         self.traverseElement(ele)
 
@@ -166,6 +165,8 @@ if __name__ == "__main__":
     #path = '/home/fuzzy/test/raw/algorithm-analysis/greedy-algorithms/greedy-algorithms-set-1-activity-selection-problem.html'
     parser = HtmlParser(path)
     description = parser.find_description()
+    if not description: sys.exit(1)
+
     solution =  parser.find_solution()
     parser.write_solution(solution)
     parser.write_description(description)
