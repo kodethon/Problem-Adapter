@@ -8,6 +8,8 @@ file_name=$(basename -- "$file_path")
 prob_name="${file_name%.*}"
 output_dir=output/$prob_name
 
+cd ../..
+
 # Create log folder if it doesn't exit
 if [ ! -e "log" ]; then
     mkdir log
@@ -23,11 +25,13 @@ fi
 echo "Using $interpreter..."
 
 # parse the python file
-$interpreter ../../lib/prepare.py "$file_path" 2>> ../../log/prepare.log
+#$interpreter lib/prepare.py "$file_path" 2>> log/prepare.log
+$interpreter lib/prepare.py "$file_path"
 
 if [ -e "$output_dir" ]; then
     # Generate cases folder
-    $interpreter ../../lib/mutate.py "$output_dir" 2>> ../../log/mutate.log
+    #$interpreter lib/mutate.py "$output_dir" 2>> log/mutate.log
+    $interpreter lib/mutate.py "$output_dir"
 
     # Zip up cases folder
     cwd=$(pwd)

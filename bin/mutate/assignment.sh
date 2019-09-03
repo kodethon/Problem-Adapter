@@ -4,6 +4,7 @@ for problem in $subcategory/*; do
 
     #if [ ! -e "output/$problem_name/cases" ]; then
         echo "Processing $problem..."
-        sh problem.sh $problem/$problem_name.py &
+        #sh problem.sh $problem/$problem_name.py &
+        sh problem.sh $problem/$problem_name.py
     #fi
 done
