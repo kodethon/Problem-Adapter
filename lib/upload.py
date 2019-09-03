@@ -7,6 +7,8 @@ import base64
 import pdb
 import yaml
 
+from termcolor import colored
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -67,83 +69,126 @@ def createTest(test):
     }
     #print json.dumps(package, indent=4, sort_keys=True)
     r = requests.post(IMPORT_URL, data = package)
+    if not r.ok:
+        logger.debug(colored(r.content, 'red'))
+
+def uploadCases(title, dirpath):
+    fp = open(os.path.join(dirpath, CASES_ZIP), 'r')
+    content = fp.read()
+
+    fp.close()
+    file_path = os.path.join('/', title, os.path.basename(AUTOGRADER_REL_PATH))
+    package = {
+        'user_id' : config[USER_ID_ENV],
+        'access_token' : config[ACCESS_TOKEN_ENV],
+        'name' : config[ASSIGNMENT_ID_ENV],       
+        'file_name' : CASES_ZIP,
+        'file_path' : file_path,
+        'file_content' : base64.b64encode(content)
+    }
+    logger.info(colored("Uploading %s" % file_path, 'green'))
+    r = requests.post(UPLOAD_URL, data = package)
+    if not r.ok:
+        logger.debug(colored(r.content, 'red'))
+
+def uploadDriverFile(title, dirpath):
+    fp = open(os.path.join(dirpath, DRIVER_FILE), 'r')
+    content = fp.read()
+    fp.close()
+
+    file_path = os.path.join('/', title, os.path.basename(AUTOGRADER_REL_PATH))
+    package = {
+        'user_id' : config[USER_ID_ENV],
+        'access_token' : config[ACCESS_TOKEN_ENV],
+        'name' : config[ASSIGNMENT_ID_ENV],       
+        'file_name' : DRIVER_FILE,
+        'file_path' : file_path,
+        'file_content' : base64.b64encode(content),
+        'overwrite' : True
+    }
+    logger.info(colored("Uploading %s" % file_path, 'green'))
+    r = requests.post(UPLOAD_URL, data = package)
+    if not r.ok:
+        logger.debug(colored(r.content, 'red'))
+
+def uploadSkeletonFile(title, dirpath):
+    fp = open(os.path.join(dirpath, SKELETON_FILE), 'r')
+    content = fp.read()
+    fp.close()
+
+    file_path = os.path.join('/', title, os.path.basename(HANDOUT_FOLDER))
+    package = {
+        'user_id' : config[USER_ID_ENV],
+        'access_token' : config[ACCESS_TOKEN_ENV],
+        'name' : config[ASSIGNMENT_ID_ENV],       
+        'file_name' : MAIN_FILE,
+        'file_path' : file_path,
+        'file_content' : base64.b64encode(content),
+        'overwrite' : True
+    }
+    logger.info(colored("Uploading %s" % file_path, 'green'))
+    r = requests.post(UPLOAD_URL, data = package)
+    if not r.ok:
+        logger.debug(colored(r.content, 'red'))
+
+def uploadSolutionFile(title, dirpath):
+    fp = open(os.path.join(dirpath, SOLUTION_FILE), 'r')
+    content = fp.read()
+    fp.close()
+
+    file_path = os.path.join('/', title, os.path.basename(SUBMISSION_FOLDER))
+    package = {
+        'user_id' : config[USER_ID_ENV],
+        'access_token' : config[ACCESS_TOKEN_ENV],
+        'name' : config[ASSIGNMENT_ID_ENV],       
+        'file_name' : MAIN_FILE,
+        'file_path' : file_path,
+        'file_content' : base64.b64encode(content),
+        'overwrite' : True
+    }
+    logger.info(colored("Uploading %s" % file_path, 'green'))
+    r = requests.post(UPLOAD_URL, data = package)
+    if not r.ok:
+        logger.debug(colored(r.content, 'red'))
+
+def uploadReferenceFile(title, dirpath):
+    fp = open(os.path.join(dirpath, SOLUTION_FILE), 'r')
+    content = fp.read()
+    fp.close()
+
+    file_path = os.path.join('/', title, REFERENCE_FOLDER)
+    package = {
+        'user_id' : config[USER_ID_ENV],
+        'access_token' : config[ACCESS_TOKEN_ENV],
+        'name' : config[ASSIGNMENT_ID_ENV],       
+        'file_name' : MAIN_FILE,
+        'file_path' : file_path,
+        'file_content' : base64.b64encode(content),
+        'overwrite' : True
+    }
+    logger.info(colored("Uploading %s" % file_path, 'green'))
+    r = requests.post(UPLOAD_URL, data = package)
+    if not r.ok:
+        logger.debug(colored(r.content, 'red'))
 
 def uploadFiles(dirpath):
     dirname = os.path.basename(dirpath)
     title = beautifyTitle(dirname)   
 
     # Upload cases
-    fp = open(os.path.join(dirpath, CASES_ZIP), 'r')
-    content = fp.read()
-    fp.close()
-    package = {
-        'user_id' : config[USER_ID_ENV],
-        'access_token' : config[ACCESS_TOKEN_ENV],
-        'name' : config[ASSIGNMENT_ID_ENV],       
-        'file_name' : CASES_ZIP,
-        'file_path' : os.path.join('/', title, os.path.basename(AUTOGRADER_REL_PATH)),
-        'file_content' : base64.b64encode(content)
-    }
-    r = requests.post(UPLOAD_URL, data = package)
+    uploadCases(title, dirpath)
     
     # Upload driver file
-    fp = open(os.path.join(dirpath, DRIVER_FILE), 'r')
-    content = fp.read()
-    fp.close()
-    package = {
-        'user_id' : config[USER_ID_ENV],
-        'access_token' : config[ACCESS_TOKEN_ENV],
-        'name' : config[ASSIGNMENT_ID_ENV],       
-        'file_name' : DRIVER_FILE,
-        'file_path' : os.path.join('/', title, os.path.basename(AUTOGRADER_REL_PATH)),
-        'file_content' : base64.b64encode(content)
-    }
-    r = requests.post(UPLOAD_URL, data = package)
+    uploadDriverFile(title, dirpath)
 
     # Upload skeleton file
-    fp = open(os.path.join(dirpath, SKELETON_FILE), 'r')
-    content = fp.read()
-    fp.close()
-    package = {
-        'user_id' : config[USER_ID_ENV],
-        'access_token' : config[ACCESS_TOKEN_ENV],
-        'name' : config[ASSIGNMENT_ID_ENV],       
-        'file_name' : MAIN_FILE,
-        'file_path' : os.path.join('/', title, os.path.basename(HANDOUT_FOLDER)),
-        'file_content' : base64.b64encode(content),
-        'overwrite' : True
-    }
-    r = requests.post(UPLOAD_URL, data = package)
+    uploadSkeletonFile(title, dirpath) 
 
     # Upload solution file
-    fp = open(os.path.join(dirpath, SOLUTION_FILE), 'r')
-    content = fp.read()
-    fp.close()
-    package = {
-        'user_id' : config[USER_ID_ENV],
-        'access_token' : config[ACCESS_TOKEN_ENV],
-        'name' : config[ASSIGNMENT_ID_ENV],       
-        'file_name' : MAIN_FILE,
-        'file_path' : os.path.join('/', title, os.path.basename(SUBMISSION_FOLDER)),
-        'file_content' : base64.b64encode(content),
-        'overwrite' : True
-    }
-    r = requests.post(UPLOAD_URL, data = package)
+    uploadSolutionFile(title, dirpath) 
 
-    # Upload solution file
-    fp = open(os.path.join(dirpath, SOLUTION_FILE), 'r')
-    content = fp.read()
-    fp.close()
-    package = {
-        'user_id' : config[USER_ID_ENV],
-        'access_token' : config[ACCESS_TOKEN_ENV],
-        'name' : config[ASSIGNMENT_ID_ENV],       
-        'file_name' : MAIN_FILE,
-        'file_path' : os.path.join('/', title, REFERENCE_FOLDER),
-        'file_content' : base64.b64encode(content),
-        'overwrite' : True
-    }
-    r = requests.post(UPLOAD_URL, data = package)
+    # Upload reference file
+    uploadReferenceFile(title, dirpath) 
 
 if __name__ == "__main__":
     file_path = sys.argv[1]
@@ -170,7 +215,7 @@ if __name__ == "__main__":
         logger.error("%s is not set." % ASSIGNMENT_ID_ENV)
         sys.exit()
 
-    logger.info('Uploading %s...' % file_path)
+    logger.info(colored('Uploading %s...' % file_path, 'cyan'))
 
     dir_path = os.path.dirname(file_path)
     description_path = os.path.join(dir_path, DESCRIPTION_FILE)
