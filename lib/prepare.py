@@ -10,6 +10,8 @@ import re
 
 import pdb
 
+from termcolor import colored
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -322,14 +324,16 @@ def modifyDriverArgs(functions, _ast, marker):
     return args
 
 def writeOutput(driver, main, skeleton, case):
-    dest_dir = 'dist'
+    dest_dir = '../dist'
     if not os.path.exists(dest_dir):
         os.mkdir(dest_dir)
 
     filename = "%s" % (os.path.basename(sys.argv[1]).split('.')[0])
-    sandbox = os.path.join(dest_dir, filename)
+    sandbox = os.path.join(os.path.dirname(os.path.realpath(__file__)), dest_dir, filename)
     if not os.path.exists(sandbox):
         os.mkdir(sandbox)
+
+    logger.info(colored("Writing output to %s" % sandbox, 'green'))
 
     fp = open(os.path.join(sandbox, 'driver.py'), 'w')
     fp.write(driver)
@@ -353,6 +357,10 @@ if __name__ == "__main__":
     # Read file contents
     fp = open(sys.argv[1])
     code = fp.read()
+    if len(code) == 0: 
+        logger.error(colored("%s is empty." % sys.argv[1], 'red'))
+        sys.exit(1)
+
     try:
         _ast = ast.parse(code)
     except SyntaxError as e:
