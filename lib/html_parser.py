@@ -75,7 +75,7 @@ class HtmlParser():
         self.with_course_name(os.path.basename(os.path.dirname(parent_path))) 
         
         # Set default output path to current directory
-        self.with_output_path('../dist')
+        self.with_output_path('/tmp/kodethon-problems')
 
         self.processor = HtmlProcessor()
 
@@ -101,7 +101,6 @@ class HtmlParser():
     def find_description(self):
         ele = self.soup.find("div", class_="entry-content")
         if not ele: return
-
         self.traverseElement(ele)
 
         return self.format_pre(ele)
@@ -158,15 +157,18 @@ class HtmlParser():
             os.makedirs(folder_path) # creates parent directories if necessary
 
     def problem_folder_path(self):
-        return os.path.join(self.output_path, self.problem_name)
+        return os.path.join(self.output_path, self.course_name, self.assignment_name, self.problem_name)
 
 if __name__ == "__main__":
     path = sys.argv[1]
     #path = '/home/fuzzy/test/raw/algorithm-analysis/greedy-algorithms/greedy-algorithms-set-1-activity-selection-problem.html'
     parser = HtmlParser(path)
-    description = parser.find_description()
-    if not description: sys.exit(1)
 
     solution =  parser.find_solution()
+    if not solution: sys.exit(1)
+
+    description = parser.find_description()
+    if not description: sys.exit(1)
+    
     parser.write_solution(solution)
     parser.write_description(description)
