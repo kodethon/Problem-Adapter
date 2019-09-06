@@ -50,7 +50,6 @@ class HtmlProcessor():
         class_names_str = ' '.join(ele.attrs['class'])
         if 'brush:' in class_names_str:
             if "brush: %s" % language not in class_names_str:
-                pdb.set_trace()
                 return True
         return False
 
@@ -153,7 +152,7 @@ class HtmlParser():
             variations = self.language_variations(self.language)
             language_found = False
             for variation in variations:
-                language_found = ("brush: %s;" % variation) in i['class']
+                language_found = ("%s;" % variation) in i['class']
                 if language_found:
                     break
             if not language_found: continue # Check if class attribute has language string
