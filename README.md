@@ -43,44 +43,31 @@ python lib/mutate.py output/PYTHON_FILE_NAME
 
 Creates a 'cases' folder in the PYTHON_FILE_NAME folder filled with generated test cases.
 
-
-#### Step 3
-
+**(Optional)** The above two commands can be run as follows:
 ```
-python lib/upload.py output/PYTHON_FILE_NAME
+cd bin/mutate; sh problem.sh DIR_PATH/PYTHON_FILE_NAME.py
 ```
 
-Adapts the generated files to Kodethon's problem format.
-
-
-### Automated
-
-Automated usage does the same thing as the manual usage except less commands have to be run.
-
-#### Batch
-    
+**(Optional)** To run prepare and mutate all problems in DIR_PATH run:    
 ```
-sh adapt-all.sh FOLDER_PATH
+cd bin/mutate; sh assignment.sh DIR_PATH
 ```
 
 The folder should have multiple directories; each directory should have a
 python folder containing the python file. The python file should have a
 unique name; it is advisable to name the file after the problem name.
 
-#### Individual
 
-```
-sh adapt-one.sh DIR_PATH/PYTHON_FILE_NAME.py
-```
+#### Step 3
 
-### Uploading
+Upload the generated problem(s) to Kodethon.
 
 1. Rename and update config/credentials.yml.sample to
 config/credentials.yml
 2. Update the file accordingly
-3. sh upload-assignment.sh FOLDER_PATH
+3. cd bin/upload; sh assignment.sh DIR_PATH
 
-The folder should contain the folders named after the problem
+DIR_PATH should contain the folders named after the problem.
 
 ## Getting Programs (Optional)
 
