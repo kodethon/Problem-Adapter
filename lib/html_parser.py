@@ -8,13 +8,16 @@ from markdownify import markdownify as md
 
 class HtmlProcessor():
     
-    def __init__(self):
+    def __init__(self, language):
+        self.language = language
         self.done = False
+        self.history = []
 
     def filterAny(self, ele):
         if not ele: return
+        self.history.append(ele)
         if issubclass(type(ele), bs4.element.NavigableString): return # Includes bs4.element.Comment
-        filters = [self.practiceLinkDiv, self.responsiveTabsWrapper]
+        filters = [self.practiceLinkDiv, self.responsiveTabsWrapper, self.script, self.preHasSolution]
         
         for f in filters:
             if self.done or f(ele):
@@ -34,9 +37,22 @@ class HtmlProcessor():
         if ele.name == 'a':
             href = ele.attrs['href']
             if not href: return
-            if 'geeksforgeeks.org' in href:
+            if 'click here' in ele.text:
+                ele.decompose()
+            elif 'geeksforgeeks.org' in href:
                 ele.name = 'span'
                 del ele.attrs['href']
+
+    def preHasSolution(self, ele):
+        if ele.name != 'pre': return False
+        class_names = ele.get('class')
+        if not class_names: return
+        class_names_str = ' '.join(ele.attrs['class'])
+        if 'brush:' in class_names_str:
+            if "brush: %s" % language not in class_names_str:
+                pdb.set_trace()
+                return True
+        return False
 
     def practiceLinkDiv(self, ele):
         """
@@ -57,8 +73,8 @@ class HtmlProcessor():
 
 class HtmlParser():
     
-    def __init__(self, file_path):
-        with open(path) as f:
+    def __init__(self, file_path, language):
+        with open(file_path) as f:
             self.soup = bs4.BeautifulSoup(f, 'html.parser')
 
         self.file_path = path
@@ -76,8 +92,23 @@ class HtmlParser():
         
         # Set default output path to current directory
         self.with_output_path('/tmp/kodethon-problems')
+            
+        self.language = language
+        self.processor = HtmlProcessor(language)
 
-        self.processor = HtmlProcessor()
+    def language_to_extension(self, language):
+        return {
+            'python' : 'py',
+            'java' : 'java',
+            'c' : 'c'
+        }[language]
+
+    def language_variations(self, language):
+        return {
+            'python' : ['python', 'python3'],
+            'java' : ['java'],
+            'c' : ['c']
+        }[language]
 
     def with_output_path(self, output_path):
         self.output_path = output_path
@@ -118,9 +149,15 @@ class HtmlParser():
         for i in self.soup.findAll('pre'):
             if 'class' not in i.attrs: # Check if tag object contains class attribute
                 continue
+            
+            variations = self.language_variations(self.language)
+            language_found = False
+            for variation in variations:
+                language_found = ("brush: %s;" % variation) in i['class']
+                if language_found:
+                    break
+            if not language_found: continue # Check if class attribute has language string
 
-            if 'python;' not in i['class'] and 'python3;' not in i['class']: # Check if class attribute has python string
-                continue
             text += i.string.encode("utf-8")
         return text
 
@@ -146,8 +183,9 @@ class HtmlParser():
         folder_path = self.problem_folder_path()
         if not os.path.exists(folder_path):
             self.create_problem_folder()
-
-        o = open(os.path.join(folder_path, self.problem_name + '.py'), 'w')
+            
+        extension = self.language_to_extension(self.language)
+        o = open(os.path.join(folder_path, self.problem_name + '.' + extension), 'w')
         o.write(solution.encode("utf-8"))
         o.close()
 
@@ -161,8 +199,9 @@ class HtmlParser():
 
 if __name__ == "__main__":
     path = sys.argv[1]
+    language = 'python'
     #path = '/home/fuzzy/test/raw/algorithm-analysis/greedy-algorithms/greedy-algorithms-set-1-activity-selection-problem.html'
-    parser = HtmlParser(path)
+    parser = HtmlParser(path, language)
 
     solution =  parser.find_solution()
     if not solution: sys.exit(1)
