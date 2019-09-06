@@ -10,5 +10,5 @@ fi
 
 for problem in $category/*; do
     problem_name=$(basename -- "$problem")
-    sh upload-one.sh dist/$problem_name
+    sh problem.sh dist/$problem_name
 done
