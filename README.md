@@ -20,8 +20,6 @@ add(1, 2)
 
 ## Usage
 
-### Manual
-
 #### Step 1 
 
 ```

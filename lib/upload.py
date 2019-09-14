@@ -6,6 +6,7 @@ import requests
 import base64
 import pdb
 import yaml
+import subprocess
 
 from termcolor import colored
 
@@ -31,6 +32,7 @@ DRIVER_FILE = 'driver.py'
 MAIN_FILE = 'solution.py'
 SKELETON_FILE = 'skeleton.py'
 SOLUTION_FILE = 'solution.py'
+SEED_FILE = 'seed.json'
 SUBMISSION_FOLDER = 'submission'
 REFERENCE_FOLDER = '.ref'
 
@@ -190,6 +192,26 @@ def uploadFiles(dirpath):
     # Upload reference file
     uploadReferenceFile(title, dirpath) 
 
+def append_sample_input_output(description, dir_path):
+    # Run the solution
+    interpreter = 'python3' if isPython3(file_path) else 'python'
+    command = "cd %s; %s driver.py %s %s" % (dir_path, interpreter, SOLUTION_FILE, SEED_FILE)
+    res = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stderr = res.stderr.read() 
+    if len(stderr):
+        raise Exception(stderr)
+
+    _output = res.stdout.read()
+
+    fp = open(os.path.join(dir_path, SEED_FILE), 'r') 
+    _input = fp.read()
+    fp.close()
+
+    description += "<br>"
+    description += "Function Arguments:\n<pre>\n%s</pre>" % _input
+    description += "<br>Progam Output:\n<pre>\n%s</pre>" % _output
+    return description
+
 if __name__ == "__main__":
     file_path = sys.argv[1]
     if not os.path.exists(file_path):
@@ -228,6 +250,7 @@ if __name__ == "__main__":
     fp = open(description_path, 'r')
     description = fp.read().strip()
     fp.close()
+    description = append_sample_input_output(description, dir_path)
 
     cases_path = os.path.join(dir_path, CASES_FOLDER)
     if not os.path.exists(cases_path):
