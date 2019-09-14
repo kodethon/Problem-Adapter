@@ -327,12 +327,12 @@ def modifyDriverArgs(functions, _ast, marker):
     return args
 
 def writeOutput(driver, main, skeleton, case):
-    dest_dir = '/tmp/kodethon-probs'
+    dest_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../dist')
     if not os.path.exists(dest_dir):
         os.mkdir(dest_dir)
 
     filename = "%s" % (os.path.basename(sys.argv[1]).split('.')[0])
-    sandbox = os.path.join(os.path.dirname(os.path.realpath(__file__)), dest_dir, filename)
+    sandbox = os.path.join(dest_dir, filename)
     if not os.path.exists(sandbox):
         os.mkdir(sandbox)
 
