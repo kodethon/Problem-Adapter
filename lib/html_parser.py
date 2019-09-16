@@ -13,24 +13,50 @@ class HtmlProcessor():
         self.done = False
         self.history = []
 
-    def filterAny(self, ele):
-        if not ele: return
-        self.history.append(ele)
-        if issubclass(type(ele), bs4.element.NavigableString): return # Includes bs4.element.Comment
-        filters = [self.practiceLinkDiv, self.responsiveTabsWrapper, self.script, self.preHasSolution]
-        
+    def check_if_done(self, ele):
+        if not ele: return False
+        if self.done: return False
+
+        if not self.is_tag(ele): return False
+
+        filters = [self.practiceLinkDiv, self.references_ele]
         for f in filters:
-            if self.done or f(ele):
-                ele.decompose()
-                break
+            if f(ele):
+                return True
+        return False
 
-    def checkIfDone(self, ele):
-        if self.done: return
-        if not issubclass(type(ele), bs4.element.NavigableString): 
+    def filter(self, ele):
+        if not ele: return False
+        if self.done: return False
+        if not self.is_tag(ele): return False
+
+        filters = [self.script, self.preHasSolution, self.responsiveTabsWrapper]
+        for f in filters:
+            if f(ele):
+                self.remove_element(ele)
+                return True
+        return False
+
+    def is_tag(self, ele):
+        # Includes bs4.element.Comment
+        return not issubclass(type(ele), bs4.element.NavigableString) and type(ele) == bs4.element.Tag
+
+    def remove_element(self, ele):
+        if self.is_tag(ele):
+            ele.decompose()
+        else:   
+            try:
+                ele.replace_with('')
+            except Exception as e:
+                # May already have been removed due .decompose being called on parent
+                pass
+
+    def references_ele(self, ele):
+        if not self.done:
             self.done = 'References:' in ele.text
-            if self.done: ele.decompose()
+        return self.done
 
-    def tryModifyLink(self, ele):
+    def try_modify_link(self, ele):
         """
         If is a link to main website, replace with span tag
         """
@@ -46,12 +72,13 @@ class HtmlProcessor():
     def preHasSolution(self, ele):
         if ele.name != 'pre': return False
         class_names = ele.get('class')
-        if not class_names: return
+        if not class_names: return False
         class_names_str = ' '.join(ele.attrs['class'])
         if 'brush:' in class_names_str:
             if "brush: %s" % language not in class_names_str:
                 self.removeSolutionTitle()
                 return True
+        return False
 
     def removeSolutionTitle(self):
         """
@@ -76,7 +103,7 @@ class HtmlProcessor():
             has_period = False
             has_colon = False
             has_title_word = False
-            pdb.set_trace() 
+
             i = 0
             for tok in toks:
                 if len(tok) == 0: continue
@@ -106,14 +133,17 @@ class HtmlProcessor():
         """
         Specific element that should be ignored
         """
+        if not self.done:
+            self.done = ele.get('id') == "practiceLinkDiv"
         return ele.get('id') == "practiceLinkDiv"
 
     def responsiveTabsWrapper(self, ele):
         """
         Wrapper for solution code
         """
+        if not ele: return False
         class_names = ele.get('class')
-        if not class_names: return
+        if not class_names: return False
         return 'responsive-tabs-wrapper' in class_names or 'responsive-tabs' in class_names
 
     def script(self, ele):
@@ -180,17 +210,26 @@ class HtmlParser():
     def find_description(self):
         ele = self.soup.find("div", class_="entry-content")
         if not ele: return
-        self.traverseElement(ele)
+        elements = []
+        self.traverse_element(ele, elements)
+
+        for root in elements:
+            self.processor.remove_element(root) 
 
         return self.format_pre(ele)
 
-    def traverseElement(self, root):
-        for ele in root.children:
-            self.processor.checkIfDone(ele)
-            self.processor.filterAny(ele)
-            self.processor.tryModifyLink(ele)
-            if type(ele) is bs4.element.Tag:
-                self.traverseElement(ele)
+    def traverse_element(self, root, elements):
+        self.processor.history.append(root)
+        self.processor.check_if_done(root)
+        filtered = self.processor.filter(root)
+        if not filtered: self.processor.try_modify_link(root)
+
+        if self.processor.done:
+            elements.append(root) 
+
+        if type(root) is bs4.element.Tag:
+            for ele in root.children:
+                self.traverse_element(ele, elements)
 
     def find_solution(self):
         text = ''
