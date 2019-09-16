@@ -204,12 +204,17 @@ def append_sample_input_output(description, dir_path):
     _output = res.stdout.read()
 
     fp = open(os.path.join(dir_path, SEED_FILE), 'r') 
-    _input = fp.read()
+    _input = json.loads(fp.read())
+    count = 1
+    arguments = str()
+    for arg in _input:
+       arguments += "Argument %s: %s\n" % (count, arg)
+       count += 1
     fp.close()
 
-    description += "<br>"
-    description += "Function Arguments:\n<pre>\n%s</pre>" % _input
-    description += "<br>Progam Output:\n<pre>\n%s</pre>" % _output
+    description += "<br><br>"
+    description += "Arguments:\n<pre>%s</pre>" % arguments
+    description += "<br>Output:\n<pre>%s</pre>" % _output
     return description
 
 if __name__ == "__main__":
