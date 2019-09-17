@@ -2,8 +2,10 @@ import pdb
 import os
 import subprocess
 import sys
-
+import urllib2
 import bs4
+import shutil
+import datetime
 from markdownify import markdownify as md
 
 class HtmlProcessor():
@@ -174,6 +176,26 @@ class HtmlParser():
         self.language = language
         self.processor = HtmlProcessor(language)
 
+    def update_file(self):
+        # Searach for file URL
+        ele = self.soup.find("meta", {'property': 'og:url'})
+        url = ele.attrs['content']
+        contents = urllib2.urlopen(url).read()
+        
+        # Move current copy to a backup version
+        current_time = str(datetime.datetime.now())
+        current_time = '-'.join(current_time.split(' '))
+        backup_folder = os.path.join(os.path.dirname(self.file_path), 'backup')
+        if not os.path.exists(backup_folder):
+            os.mkdir(backup_folder)
+        new_path = os.path.join(backup_folder, "%s.%s" % (self.file_name, current_time))
+        shutil.move(self.file_path, new_path)
+            
+        # Create new copy of the file
+        fp = open(self.file_path, 'w')
+        fp.write(contents)
+        fp.close()
+
     def language_to_extension(self, language):
         return {
             'python' : 'py',
@@ -289,6 +311,8 @@ if __name__ == "__main__":
     language = 'python'
     #path = '/home/fuzzy/test/raw/algorithm-analysis/greedy-algorithms/greedy-algorithms-set-1-activity-selection-problem.html'
     parser = HtmlParser(path, language)
+
+    parser.update_file()
 
     solution =  parser.find_solution()
     if not solution: sys.exit(1)
