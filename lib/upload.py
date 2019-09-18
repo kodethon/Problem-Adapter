@@ -35,6 +35,7 @@ SOLUTION_FILE = 'solution.py'
 SEED_FILE = 'seed.json'
 SUBMISSION_FOLDER = 'submission'
 REFERENCE_FOLDER = '.ref'
+METADATA_JSON = 'metadata.json'
 
 with open("config/credentials.yml", 'r') as stream:
     try:
@@ -44,10 +45,6 @@ with open("config/credentials.yml", 'r') as stream:
 
 def isPython3(file_path):
     return os.path.exists(os.path.join(file_path, PYTHON3_MARKER))
-
-def beautifyTitle(title):
-    title = title.replace('-', ' ')
-    return title.title()
 
 def generateCases(cases_path, answers_path):
     # Generate all the cases
@@ -173,9 +170,67 @@ def uploadReferenceFile(title, dirpath):
     if not r.ok:
         logger.debug(colored(r.content, 'red'))
 
-def uploadFiles(dirpath):
+def parseMetadata(dirpath):
+    metadata_json_file = os.path.join(dirpath, METADATA_JSON)
+    fp = open(metadata_json_file, 'r')
+    contents = fp.read()
+    fp.close()
+    metadata = json.loads(contents)
+    return metadata
+
+def createProblem(file_path):
+    logger.info(colored('Uploading %s...' % file_path, 'cyan'))
+
+    dir_path = os.path.dirname(file_path)
+    description_path = os.path.join(dir_path, DESCRIPTION_FILE)
+    if not os.path.exists(description_path):
+        description_path = os.path.join(dir_path, DESCRIPTION_FILE_ALT)
+        if not os.path.exists(description_path):
+            logger.error("%s does not exist!" % description_path)
+            sys.exit()
+
+    fp = open(description_path, 'r')
+    description = fp.read().strip()
+    fp.close()
+
+    description = append_sample_input_output(description, dir_path)
+    answers_path = os.path.join(dir_path, 'answers')
+    if not os.path.exists(answers_path):
+        logger.error("%s does not exist!" % answers_path)
+        sys.exit()
+
+    cases_path = os.path.join(dir_path, CASES_FOLDER)
+    if not os.path.exists(cases_path):
+        logger.error("%s does not exist!" % cases_path)
+        sys.exit()
+
+    cases = generateCases(cases_path, answers_path)
+    dirname = os.path.basename(dir_path)
+    metadata = parseMetadata(dir_path)
+
+    createTest({
+        'test_name': metadata['title'],
+        'Difficulty' : metadata['difficulty'],
+        'cases' : cases,
+        'Style' : 'Diff',
+        'Description' : description,
+        'Run Command' : language_to_run_command(metadata['language'], os.path.join(AUTOGRADER_REL_PATH, DRIVER_FILE)),
+        'Ignore Whitespace' : 'All',
+        'Category' : config[PROBLEM_CATEGORY],
+        'Use Reference Program': True
+    }) 
+
+def language_to_run_command(language, driver_file):
+    return {
+        'python3' : "%s %s" % (language, driver_file),
+        'python' :  "%s %s" % (language, driver_file)
+    }[language]
+
+def uploadFiles(file_path):
+    dirpath = os.path.dirname(file_path)
     dirname = os.path.basename(dirpath)
-    title = beautifyTitle(dirname)   
+    metadata = parseMetadata(dirpath)
+    title = metadata['title']
 
     # Upload cases
     uploadCases(title, dirpath)
@@ -241,43 +296,6 @@ if __name__ == "__main__":
     if ASSIGNMENT_ID_ENV not in config:
         logger.error("%s is not set." % ASSIGNMENT_ID_ENV)
         sys.exit()
-
-    logger.info(colored('Uploading %s...' % file_path, 'cyan'))
-
-    dir_path = os.path.dirname(file_path)
-    description_path = os.path.join(dir_path, DESCRIPTION_FILE)
-    if not os.path.exists(description_path):
-        description_path = os.path.join(dir_path, DESCRIPTION_FILE_ALT)
-        if not os.path.exists(description_path):
-            logger.error("%s does not exist!" % description_path)
-            sys.exit()
-
-    fp = open(description_path, 'r')
-    description = fp.read().strip()
-    fp.close()
-    description = append_sample_input_output(description, dir_path)
-
-    cases_path = os.path.join(dir_path, CASES_FOLDER)
-    if not os.path.exists(cases_path):
-        logger.error("%s does not exist!" % cases_path)
-        sys.exit()
-
-    answers_path = os.path.join(dir_path, 'answers')
-    if not os.path.exists(answers_path):
-        logger.error("%s does not exist!" % answers_path)
-        sys.exit()
         
-    cases = generateCases(cases_path, answers_path)
-    dirname = os.path.basename(dir_path)
-    interpreter = 'python3' if isPython3(file_path) else 'python'
-    createTest({
-        'test_name': beautifyTitle(dirname),
-        'cases' : cases,
-        'Style' : 'Diff',
-        'Description' : description,
-        'Run Command' : '%s %s/%s' % (interpreter, AUTOGRADER_REL_PATH, DRIVER_FILE),
-        'Ignore Whitespace' : 'All',
-        'Category' : config[PROBLEM_CATEGORY],
-        'Use Reference Program': True
-    }) 
-    uploadFiles(dir_path)
+    createProblem(file_path)
+    uploadFiles(file_path)
