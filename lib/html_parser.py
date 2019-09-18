@@ -6,6 +6,7 @@ import urllib2
 import bs4
 import shutil
 import datetime
+import json
 from markdownify import markdownify as md
 
 class HtmlProcessor():
@@ -196,23 +197,41 @@ class HtmlParser():
         fp.write(contents)
         fp.close()
 
-    def write_metadata(self):
+    def get_metadata(self):
+        metadata = {}
         ele = self.soup.find("span", {'id': 'rating_box'})
-        difficulty = ele.text
-        ele = self.soup.find('title')
-        title = ele.text.split('|')[0].trim()
-        metadata = {
-            'difficulty' : difficulty,
-            'title' : title
-        }
+        if not ele:
+            print 'Could not find rating.'
+            return
+        difficulty = float(ele.text.strip())
+        metadata['difficulty'] = difficulty
 
+        ele = self.soup.find("meta", {'property': 'og:url'})
+        url = ele.attrs['content']
+        ele = self.soup.find('a', {'href': url})
+        title = ele.text
+        if '|' in title:
+            title = title.split('|')[0].strip()
+        metadata['title'] = title.strip()
+        
+        variations = self.language_variations(self.language)
+        for variation in variations:
+            ele = self.soup.find('pre', {'class': "%s;" % variation})
+            if not ele:
+                continue
+            else:
+                metadata['language'] = variation
+                break
+        return metadata
+        
+    def write_metadata(self, metadata):
         folder_path = self.problem_folder_path()
         if not os.path.exists(folder_path):
             self.create_problem_folder()
         
         json_file_path = os.path.join(folder_path, "metadata.json")
         o = open(json_file_path, "w")
-        o.write(json.dumps(description).encode("utf-8"))
+        o.write(json.dumps(metadata).encode("utf-8"))
         o.close()
 
     def language_to_extension(self, language):
@@ -327,17 +346,26 @@ class HtmlParser():
 
 if __name__ == "__main__":
     path = sys.argv[1]
+    if os.path.isdir(path):
+        print "%s is a directory." % path
+        sys.exit(1)
+
     language = 'python'
     parser = HtmlParser(path, language)
 
-    parser.update_file()
+    #parser.update_file()
+    metadata = parser.get_metadata()
 
     solution =  parser.find_solution()
-    if not solution: sys.exit(1)
+    if not solution: 
+        print 'Could not find solution.' 
+        sys.exit(1)
 
     description = parser.find_description()
-    if not description: sys.exit(1)
+    if not description: 
+        print 'Could not find description.'
+        sys.exit(1)
 
-    parser.write_metadata()
+    parser.write_metadata(metadata)
     parser.write_solution(solution)
     parser.write_description(description)
