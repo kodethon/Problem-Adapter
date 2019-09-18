@@ -196,6 +196,25 @@ class HtmlParser():
         fp.write(contents)
         fp.close()
 
+    def write_metadata(self):
+        ele = self.soup.find("span", {'id': 'rating_box'})
+        difficulty = ele.text
+        ele = self.soup.find('title')
+        title = ele.text.split('|')[0].trim()
+        metadata = {
+            'difficulty' : difficulty,
+            'title' : title
+        }
+
+        folder_path = self.problem_folder_path()
+        if not os.path.exists(folder_path):
+            self.create_problem_folder()
+        
+        json_file_path = os.path.join(folder_path, "metadata.json")
+        o = open(json_file_path, "w")
+        o.write(json.dumps(description).encode("utf-8"))
+        o.close()
+
     def language_to_extension(self, language):
         return {
             'python' : 'py',
@@ -309,7 +328,6 @@ class HtmlParser():
 if __name__ == "__main__":
     path = sys.argv[1]
     language = 'python'
-    #path = '/home/fuzzy/test/raw/algorithm-analysis/greedy-algorithms/greedy-algorithms-set-1-activity-selection-problem.html'
     parser = HtmlParser(path, language)
 
     parser.update_file()
@@ -319,6 +337,7 @@ if __name__ == "__main__":
 
     description = parser.find_description()
     if not description: sys.exit(1)
-    
+
+    parser.write_metadata()
     parser.write_solution(solution)
     parser.write_description(description)
