@@ -3,3 +3,4 @@ dist
 log
 config/credentials.yml
 lib/scraper/output
+*.pyc

@@ -1,171 +1,28 @@
 import pdb
 import os
 import subprocess
-import sys
 import urllib2
 import bs4
 import shutil
 import datetime
 import json
+
 from markdownify import markdownify as md
-
-class HtmlProcessor():
-    
-    def __init__(self, language):
-        self.language = language
-        self.done = False
-        self.history = []
-
-    def check_if_done(self, ele):
-        if not ele: return False
-        if self.done: return False
-
-        if not self.is_tag(ele): return False
-
-        filters = [self.practiceLinkDiv, self.references_ele]
-        for f in filters:
-            if f(ele):
-                return True
-        return False
-
-    def filter(self, ele):
-        if not ele: return False
-        if self.done: return False
-        if not self.is_tag(ele): return False
-
-        filters = [self.script, self.preHasSolution, self.responsiveTabsWrapper]
-        for f in filters:
-            if f(ele):
-                self.remove_element(ele)
-                return True
-        return False
-
-    def is_tag(self, ele):
-        # Includes bs4.element.Comment
-        return not issubclass(type(ele), bs4.element.NavigableString) and type(ele) == bs4.element.Tag
-
-    def remove_element(self, ele):
-        if self.is_tag(ele):
-            ele.decompose()
-        else:   
-            try:
-                ele.replace_with('')
-            except Exception as e:
-                # May already have been removed due .decompose being called on parent
-                pass
-
-    def references_ele(self, ele):
-        if not self.done:
-            self.done = 'References:' in ele.text
-        return self.done
-
-    def try_modify_link(self, ele):
-        """
-        If is a link to main website, replace with span tag
-        """
-        if ele.name == 'a':
-            href = ele.attrs['href']
-            if not href: return
-            if 'click here' in ele.text:
-                ele.decompose()
-            elif 'geeksforgeeks.org' in href:
-                ele.name = 'span'
-                del ele.attrs['href']
-
-    def preHasSolution(self, ele):
-        if ele.name != 'pre': return False
-        class_names = ele.get('class')
-        if not class_names: return False
-        class_names_str = ' '.join(ele.attrs['class'])
-        if 'brush:' in class_names_str:
-            if "brush: %s" % language not in class_names_str:
-                self.removeSolutionTitle()
-                return True
-        return False
-
-    def removeSolutionTitle(self):
-        """
-        A solution is generally accompanied by a title that references it.
-        It should have phrases such as, The following..., Following..., Below..., Shown...
-        """
-        cur = len(self.history) - 1
-        title_words = ['Following', 'Below']
-        follow_up_words = ['following', 'below']
-        while cur >= 0: 
-            ele = self.history[cur]
-            if type(ele) != bs4.element.NavigableString:
-                cur -= 1
-                continue
-            
-            toks = ele.strip().split(' ')
-            if len(toks) == 1: 
-                cur -= 1
-                continue
- 
-            capital_letters_count = 0
-            has_period = False
-            has_colon = False
-            has_title_word = False
-
-            i = 0
-            for tok in toks:
-                if len(tok) == 0: continue
-                if i == 0:
-                    has_title_word = tok in title_words
-
-                if i == 1 and not has_title_word:
-                    has_title_word = tok in follow_up_words
-
-                if tok == '.':
-                    has_period = True 
-                elif tok[-1] == ':':
-                    has_colon = True
-                elif tok[0].isupper():
-                    capital_letters_count += 1
-
-                i += 1
-            
-            if capital_letters_count > 1 or not has_period or has_title_word:
-                ele.replace_with('')
-            
-            # This is a title, stop here
-            if capital_letters_count > 1: break
-
-
-    def practiceLinkDiv(self, ele):
-        """
-        Specific element that should be ignored
-        """
-        if not self.done:
-            self.done = ele.get('id') == "practiceLinkDiv"
-        return ele.get('id') == "practiceLinkDiv"
-
-    def responsiveTabsWrapper(self, ele):
-        """
-        Wrapper for solution code
-        """
-        if not ele: return False
-        class_names = ele.get('class')
-        if not class_names: return False
-        return 'responsive-tabs-wrapper' in class_names or 'responsive-tabs' in class_names
-
-    def script(self, ele):
-        return ele.name == "script"
 
 class HtmlParser():
     
-    def __init__(self, file_path, language):
+    def __init__(self, file_path, processor):
         with open(file_path) as f:
             self.soup = bs4.BeautifulSoup(f, 'html.parser')
 
-        self.file_path = path
+        self.file_path = file_path
 
         # Set problem name
-        self.file_name = os.path.basename(path)
+        self.file_name = os.path.basename(file_path)
         self.with_problem_name(self.file_name.replace('.html', ''))
         
         # Set assignment name
-        parent_path = os.path.dirname(path)
+        parent_path = os.path.dirname(file_path)
         self.with_assignment_name(os.path.basename(parent_path))
 
         # Set course name
@@ -174,8 +31,8 @@ class HtmlParser():
         # Set default output path to current directory
         self.with_output_path('/tmp/kodethon-problems')
             
-        self.language = language
-        self.processor = HtmlProcessor(language)
+        self.language = processor.language
+        self.processor = processor
 
     def update_file(self):
         # Searach for file URL
@@ -322,7 +179,8 @@ class HtmlParser():
         o.close()
 
         o = open(os.path.join(folder_path, "description.md"), "w")
-        md = subprocess.check_output(['node', 'html_2_md.js', html_file_path])
+        translator = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'html_2_md.js')
+        md = subprocess.check_output(['node', translator, html_file_path])
         o.write(md)
         o.close()
 
@@ -344,28 +202,3 @@ class HtmlParser():
     def problem_folder_path(self):
         return os.path.join(self.output_path, self.course_name, self.assignment_name, self.problem_name)
 
-if __name__ == "__main__":
-    path = sys.argv[1]
-    if os.path.isdir(path):
-        print "%s is a directory." % path
-        sys.exit(1)
-
-    language = 'python'
-    parser = HtmlParser(path, language)
-
-    #parser.update_file()
-    metadata = parser.get_metadata()
-
-    solution =  parser.find_solution()
-    if not solution: 
-        print 'Could not find solution.' 
-        sys.exit(1)
-
-    description = parser.find_description()
-    if not description: 
-        print 'Could not find description.'
-        sys.exit(1)
-
-    parser.write_metadata(metadata)
-    parser.write_solution(solution)
-    parser.write_description(description)
