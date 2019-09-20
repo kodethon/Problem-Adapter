@@ -143,6 +143,8 @@ class HtmlParser():
 
         if self.processor.done:
             elements.append(root) 
+        else:
+            self.processor.try_process_image(root)
 
         if type(root) is bs4.element.Tag:
             for ele in root.children:

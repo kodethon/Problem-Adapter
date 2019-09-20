@@ -1,4 +1,9 @@
 import bs4 
+import pdb
+import urllib2
+import os
+
+from google.cloud import storage
 
 class HtmlProcessor():
     
@@ -6,6 +11,12 @@ class HtmlProcessor():
         self.language = language
         self.done = False
         self.history = []
+
+        client = storage.Client()
+        self.bucket_name = 'kodethon'
+        self.bucket = client.get_bucket(self.bucket_name)
+        self.bucket_folder_name = 'a6eb56f80be8a120436d6f1c9b8d87ca'
+        self.bucket_host = 'https://storage.googleapis.com'
 
     def check_if_done(self, ele):
         if not ele: return False
@@ -69,7 +80,7 @@ class HtmlProcessor():
         if not class_names: return False
         class_names_str = ' '.join(ele.attrs['class'])
         if 'brush:' in class_names_str:
-            if "brush: %s" % language not in class_names_str:
+            if "brush: %s" % self.language not in class_names_str:
                 self.removeSolutionTitle()
                 return True
         return False
@@ -142,3 +153,15 @@ class HtmlProcessor():
 
     def script(self, ele):
         return ele.name == "script"
+
+    def try_process_image(self, ele):
+        if not ele.name == 'img': return False
+        src = ele.get('src') 
+        contents = urllib2.urlopen(src).read()
+        path = os.path.join(self.bucket_folder_name, os.path.basename(src))
+        blob = self.bucket.blob(path)
+        blob.upload_from_string(contents)
+        url = os.path.join(self.bucket_host, self.bucket_name, path)
+        ele['src'] = url
+        return True
+            

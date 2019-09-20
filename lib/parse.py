@@ -9,11 +9,11 @@ if __name__ == "__main__":
     if os.path.isdir(path):
         print "%s is a directory." % path
         sys.exit(1)
-
+    
     language = 'python'
     processor = HtmlProcessor(language)
     parser = HtmlParser(path, processor)
-
+    
     #parser.update_file()
     metadata = parser.get_metadata()
 
