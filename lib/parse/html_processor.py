@@ -35,7 +35,7 @@ class HtmlProcessor():
         if self.done: return False
         if not self.is_tag(ele): return False
 
-        filters = [self.script, self.preHasSolution, self.responsiveTabsWrapper]
+        filters = [self.script, self.external_references, self.responsiveTabsWrapper]
         for f in filters:
             if f(ele):
                 self.remove_element(ele)
@@ -73,66 +73,10 @@ class HtmlProcessor():
             elif 'geeksforgeeks.org' in href:
                 ele.name = 'span'
                 del ele.attrs['href']
-
-    def preHasSolution(self, ele):
-        if ele.name != 'pre': return False
-        class_names = ele.get('class')
-        if not class_names: return False
-        class_names_str = ' '.join(ele.attrs['class'])
-        if 'brush:' in class_names_str:
-            if "brush: %s" % self.language not in class_names_str:
-                self.removeSolutionTitle()
-                return True
-        return False
-
-    def removeSolutionTitle(self):
-        """
-        A solution is generally accompanied by a title that references it.
-        It should have phrases such as, The following..., Following..., Below..., Shown...
-        """
-        cur = len(self.history) - 1
-        title_words = ['Following', 'Below']
-        follow_up_words = ['following', 'below']
-        while cur >= 0: 
-            ele = self.history[cur]
-            if type(ele) != bs4.element.NavigableString:
-                cur -= 1
-                continue
-            
-            toks = ele.strip().split(' ')
-            if len(toks) == 1: 
-                cur -= 1
-                continue
- 
-            capital_letters_count = 0
-            has_period = False
-            has_colon = False
-            has_title_word = False
-
-            i = 0
-            for tok in toks:
-                if len(tok) == 0: continue
-                if i == 0:
-                    has_title_word = tok in title_words
-
-                if i == 1 and not has_title_word:
-                    has_title_word = tok in follow_up_words
-
-                if tok == '.':
-                    has_period = True 
-                elif tok[-1] == ':':
-                    has_colon = True
-                elif tok[0].isupper():
-                    capital_letters_count += 1
-
-                i += 1
-            
-            if capital_letters_count > 1 or not has_period or has_title_word:
-                ele.replace_with('')
-            
-            # This is a title, stop here
-            if capital_letters_count > 1: break
-
+    
+    def external_references(self, ele):
+        if ele.name == 'p':
+            return 'have discussed' in ele.text
 
     def practiceLinkDiv(self, ele):
         """
@@ -140,7 +84,11 @@ class HtmlProcessor():
         """
         if not self.done:
             self.done = ele.get('id') == "practiceLinkDiv"
-        return ele.get('id') == "practiceLinkDiv"
+
+            if not self.done and ele.name == 'a':
+                self.done = 'https://practice.geeksforgeeks.org' in ele.attrs['href']
+
+        return self.done
 
     def responsiveTabsWrapper(self, ele):
         """
