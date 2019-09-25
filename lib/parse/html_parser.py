@@ -6,8 +6,13 @@ import bs4
 import shutil
 import datetime
 import json
+import codecs
 
 from markdownify import markdownify as md
+
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 class HtmlParser():
     
@@ -55,6 +60,7 @@ class HtmlParser():
         fp.close()
 
     def get_metadata(self):
+        # Get difficulty
         metadata = {}
         ele = self.soup.find("span", {'id': 'rating_box'})
         if not ele:
@@ -62,15 +68,22 @@ class HtmlParser():
             return
         difficulty = float(ele.text.strip())
         metadata['difficulty'] = difficulty
-
+        
+        # Get title
         ele = self.soup.find("meta", {'property': 'og:url'})
         url = ele.attrs['content']
         ele = self.soup.find('a', {'href': url})
-        title = ele.text
+        if not ele:
+            ele = self.soup.find('h1', {'class': 'entry-title'}) 
+            title = ele.text
+        else:
+            title = ele.text
+
         if '|' in title:
             title = title.split('|')[0].strip()
         metadata['title'] = title.strip()
         
+        # Get language
         variations = self.language_variations(self.language)
         for variation in variations:
             ele = self.soup.find('pre', {'class': "%s;" % variation})
@@ -192,7 +205,7 @@ class HtmlParser():
             self.create_problem_folder()
             
         extension = self.language_to_extension(self.language)
-        o = open(os.path.join(folder_path, self.problem_name + '.' + extension), 'w')
+        o = codecs.open(os.path.join(folder_path, self.problem_name + '.' + extension), 'w')
         o.write(solution.encode("utf-8"))
         o.close()
 
