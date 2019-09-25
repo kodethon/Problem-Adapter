@@ -19,14 +19,14 @@ class HtmlProcessor():
         self.bucket_host = 'https://storage.googleapis.com'
 
     def check_if_done(self, ele):
+        if self.done: return True
         if not ele: return False
-        if self.done: return False
-
-        if not self.is_tag(ele): return False
-
-        filters = [self.practiceLinkDiv, self.references_ele]
+        
+        filters = [self.practiceLinkDiv, self.references, self.pre_has_solution]
         for f in filters:
             if f(ele):
+                self.filter(ele)
+                self.done = True
                 return True
         return False
 
@@ -56,10 +56,76 @@ class HtmlProcessor():
                 # May already have been removed due .decompose being called on parent
                 pass
 
-    def references_ele(self, ele):
-        if not self.done:
-            self.done = 'References:' in ele.text
-        return self.done
+    def pre_has_solution(self, ele):
+        if not self.is_tag(ele): return False
+        if ele.name != 'pre': return False
+        class_names = ele.get('class')
+        if not class_names: return False
+        class_names_str = ' '.join(ele.attrs['class'])
+        if 'brush:' in class_names_str:
+            if "brush: %s" % self.language not in class_names_str:
+                self.remove_solution_header()
+                return True
+        return False
+
+    def remove_solution_header(self):
+        """
+        A solution is generally accompanied by a title that references it.
+        It should have phrases such as, The following..., Following..., Below..., Shown...
+        """
+        cur = len(self.history) - 1
+        title_words = ['following', 'below']
+        reference_words = ['it']
+
+        while cur >= 0: 
+            ele = self.history[cur]
+            if type(ele) != bs4.element.NavigableString:
+                cur -= 1
+                continue
+            
+            if len(ele.strip()) == 0: 
+                cur -= 1
+                continue
+            toks = ele.strip().split(' ')
+
+            capital_letters_count = 0
+            period_count = 0
+            has_colon = False
+            has_title_word = False
+            has_reference_word = False
+
+            i = 0
+            for tok in toks:
+                if len(tok) == 0: continue
+                
+                if tok.lower() in title_words:
+                    has_title_word = True
+                    break
+
+                if tok.lower() in reference_words:
+                    has_reference_word = True
+                    break
+
+                if tok[-1] == ':':
+                    has_colon = True
+                    break
+
+                if tok[-1] == '.':
+                    period_count += 1
+                elif tok[0].isupper() and i == 0:
+                    capital_letters_count += 1
+
+                i += 1
+
+            if capital_letters_count > period_count or has_title_word or has_reference_word or has_colon:
+                ele.replace_with('')
+            else:
+                break
+            cur -= 1
+
+    def references(self, ele):
+        if self.is_tag(ele): return False
+        return 'References:' in ele or 'This question' in ele
 
     def try_modify_link(self, ele):
         """
@@ -82,6 +148,9 @@ class HtmlProcessor():
         """
         Specific element that should be ignored
         """
+        if not self.is_tag(ele):
+            return False
+
         if not self.done:
             self.done = ele.get('id') == "practiceLinkDiv"
 

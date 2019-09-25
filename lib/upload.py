@@ -67,6 +67,7 @@ def createTest(test):
         'test_settings'  : json.dumps(test),
     }
     #print json.dumps(package, indent=4, sort_keys=True)
+    logger.info(colored("Importing test settings", 'green'))
     r = requests.post(IMPORT_URL, data = package)
     if not r.ok:
         logger.debug(colored(r.content, 'red'))
