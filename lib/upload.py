@@ -1,4 +1,3 @@
-import sys
 import os
 import logging
 import json
@@ -9,6 +8,10 @@ import yaml
 import subprocess
 
 from termcolor import colored
+
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -42,9 +45,6 @@ with open("config/credentials.yml", 'r') as stream:
         config = yaml.load(stream)
     except yaml.YAMLError as exc:
         logger.error(exc)
-
-def isPython3(file_path):
-    return os.path.exists(os.path.join(file_path, PYTHON3_MARKER))
 
 def generateCases(cases_path, answers_path):
     # Generate all the cases
@@ -208,14 +208,14 @@ def createProblem(file_path):
     cases = generateCases(cases_path, answers_path)
     dirname = os.path.basename(dir_path)
     metadata = parseMetadata(dir_path)
-
+    run_command = language_to_run_command(metadata['language'], os.path.join(AUTOGRADER_REL_PATH, DRIVER_FILE))
     createTest({
         'test_name': metadata['title'],
         'Difficulty' : metadata['difficulty'],
         'cases' : cases,
         'Style' : 'Diff',
         'Description' : description,
-        'Run Command' : language_to_run_command(metadata['language'], os.path.join(AUTOGRADER_REL_PATH, DRIVER_FILE)),
+        'Run Command' : run_command,
         'Ignore Whitespace' : 'All',
         'Category' : config[PROBLEM_CATEGORY],
         'Use Reference Program': True
@@ -250,8 +250,9 @@ def uploadFiles(file_path):
 
 def append_sample_input_output(description, dir_path):
     # Run the solution
-    interpreter = 'python3' if isPython3(file_path) else 'python'
-    command = "cd %s; %s driver.py %s %s" % (dir_path, interpreter, SOLUTION_FILE, SEED_FILE)
+    metadata = parseMetadata(dir_path)
+    run_command = language_to_run_command(metadata['language'], DRIVER_FILE)
+    command = "cd %s; %s %s %s" % (dir_path, run_command, SOLUTION_FILE, SEED_FILE)
     res = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stderr = res.stderr.read() 
     if len(stderr):
