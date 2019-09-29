@@ -266,7 +266,10 @@ def modifyDriverArgs(functions, _ast, marker):
         # If assignment, update symbol table
         for target in node.targets:
             if isVariable(target):
-                st[target.id] = node
+                if target.__class__ == ast.Subscript:
+                    st[target.value.id] = node
+                else:
+                    st[target.id] = node
             elif isAttribute(target):
                 # If symbol has an attribute e.g. obj.attr, then try to modify it 
                 symbol = getSymbol(target)
@@ -326,56 +329,47 @@ def modifyDriverArgs(functions, _ast, marker):
             arg_num += 1
     return args
 
-def writeOutput(driver, main, skeleton, case):
-    dest_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../dist')
-    if not os.path.exists(dest_dir):
-        os.mkdir(dest_dir)
+def writeOutput(dest_dir, driver, main, skeleton, case):
+    logger.info(colored("Writing output to %s" % dest_dir, 'green'))
 
-    filename = "%s" % (os.path.basename(sys.argv[1]).split('.')[0])
-    sandbox = os.path.join(dest_dir, filename)
-    if not os.path.exists(sandbox):
-        os.mkdir(sandbox)
-
-    logger.info(colored("Writing output to %s" % sandbox, 'green'))
-
-    fp = open(os.path.join(sandbox, 'driver.py'), 'w')
+    fp = open(os.path.join(dest_dir, 'driver.py'), 'w')
     fp.write(driver)
     fp.close()
 
-    fp = open(os.path.join(sandbox, 'solution.py'), 'w')
+    fp = open(os.path.join(dest_dir, 'solution.py'), 'w')
     fp.write(main)
     fp.close()
 
-    fp = open(os.path.join(sandbox, 'skeleton.py'), 'w')
+    fp = open(os.path.join(dest_dir, 'skeleton.py'), 'w')
     fp.write(skeleton)
     fp.close()
 
-    fp = open(os.path.join(sandbox, 'seed.json'), 'w')
+    fp = open(os.path.join(dest_dir, 'seed.json'), 'w')
     fp.write(json.dumps(case))
     fp.close()
 
 if __name__ == "__main__":
-    logger.info('Processing %s' % sys.argv[1])
+    solution_file_path = sys.argv[1]
+    logger.info('Processing %s' % solution_file_path)
 
     # Read file contents
-    fp = open(sys.argv[1])
+    fp = open(solution_file_path)
     code = fp.read()
     if len(code) == 0: 
-        logger.error(colored("%s is empty." % sys.argv[1], 'red'))
+        logger.error(colored("%s is empty." % solution_file_path, 'red'))
         sys.exit(1)
 
     try:
         _ast = ast.parse(code)
     except SyntaxError as e:
-        logger.error('Could not parse %s' % sys.argv[1])
+        logger.error('Could not parse %s' % solution_file_path)
         logger.error(e)
         sys.exit()
     
+    # Generate modified source code
     functions = getFunctionDefs(_ast)
     callers = getFunctionCallers(_ast)
     lineno = findSplitPoint(code, functions)
-    # Generate modified source code
-
     main, driver = tryInlineMain(code, lineno, functions, callers)
     if not main or not driver:
         main, driver = splitSource(code, lineno)
@@ -390,12 +384,12 @@ if __name__ == "__main__":
     # Replace caller args with different value
     marker = "*****"
 
+    # Write files to folder
     case = modifyDriverArgs(functions, _ast, marker) 
-    
     code = astor.to_source(_ast)
     code = code.replace("%s'" % marker, '')
     code = code.replace("'%s" % marker, '')
     driver = code.replace(main, '')
     driver = "import json\nimport sys\n\nexec(open(sys.argv[1]).read())\n\n_INPUTS = json.loads(open(sys.argv[2]).read())\n\n" + driver
-    
-    writeOutput(driver, main, skeleton, case) 
+    dest_dir = os.path.dirname(solution_file_path)
+    writeOutput(dest_dir, driver, main, skeleton, case) 
