@@ -70,17 +70,16 @@ class HtmlParser():
         metadata['difficulty'] = difficulty
         
         # Get title
-        ele = self.soup.find("meta", {'property': 'og:url'})
-        url = ele.attrs['content']
-        ele = self.soup.find('a', {'href': url})
-        if not ele:
-            ele = self.soup.find('h1', {'class': 'entry-title'}) 
-            title = ele.text
-        else:
-            title = ele.text
+        ele = self.soup.find("title")
+        title = ele.text
+        title = title.replace('- GeeksforGeeks', '').strip()
 
         if '|' in title:
-            title = title.split('|')[0].strip()
+            if '(' in title:
+                title = title[title.index('(')+1:title.index(')')]
+            else:
+                title = title.split('|')[0]
+            
         metadata['title'] = title.strip()
         
         # Get language
@@ -205,7 +204,7 @@ class HtmlParser():
             self.create_problem_folder()
             
         extension = self.language_to_extension(self.language)
-        o = codecs.open(os.path.join(folder_path, self.problem_name + '.' + extension), 'w')
+        o = open(os.path.join(folder_path, self.problem_name + '.' + extension), 'w')
         o.write(solution.encode("utf-8"))
         o.close()
 
