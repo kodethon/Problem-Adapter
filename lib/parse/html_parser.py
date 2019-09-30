@@ -76,7 +76,7 @@ class HtmlParser():
 
         if '|' in title:
             if '(' in title:
-                title = title[title.index('(')+1:title.index(')')]
+                title = title[title.index('(')+1:title.rindex(')')]
             else:
                 title = title.split('|')[0]
             
