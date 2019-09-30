@@ -166,6 +166,12 @@ def getFunctionCallersNoArgs(_ast):
     return functions_with_no_args
 
 def tryInlineMain(code, split_point, functions, callers):
+    """
+    If there is a function without args, this means we potentially 
+    can't pass different arguments to the function, instead try to 
+    inline the main function. The main function is determined as the 
+    function with exactly one function call
+    """
     main, driver = splitSource(code, split_point)
     _ast = ast.parse(driver)
     functions_no_args = getFunctionCallersNoArgs(_ast)
@@ -178,7 +184,7 @@ def tryInlineMain(code, split_point, functions, callers):
         if num_callers != 1:
             continue
 
-        # Find the 'main' function body
+        # Find the line numbers for the 'main' function body
         main_function_start = -1
         main_function_end = -1
         lineno = functions[candidate]
@@ -201,9 +207,13 @@ def tryInlineMain(code, split_point, functions, callers):
         main_function_lines = removeReturnStatements(main_function_lines)
         main_function = "\n".join(main_function_lines)
 
+        # If main function references self, this can't be inlined
+        if 'self.' in main_function:
+            return None, None
+
         # Note: main_function_start = lineno of 'def main', subtract 1 from it to get the line before it
         main = "\n".join(lines[0:main_function_start - 1]) + "\n".join(lines[main_function_end:])
-
+        
         # Inline the code
         _ast = ast.parse(driver)
         for node in ast.walk(_ast):
