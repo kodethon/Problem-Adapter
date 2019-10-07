@@ -151,7 +151,9 @@ class HtmlParser():
         self.processor.history.append(root)
         self.processor.check_if_done(root)
         filtered = self.processor.filter(root)
-        if not filtered: self.processor.try_modify_link(root)
+        if not filtered: 
+            self.processor.try_modify_link(root)
+            self.processor.modify_image(root)
 
         if self.processor.done:
             elements.append(root) 

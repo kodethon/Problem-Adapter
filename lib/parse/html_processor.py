@@ -59,6 +59,7 @@ class HtmlProcessor():
     def pre_has_solution(self, ele):
         if not self.is_tag(ele): return False
         if ele.name != 'pre': return False
+
         class_names = ele.get('class')
         if not class_names: return False
         class_names_str = ' '.join(ele.attrs['class'])
@@ -139,6 +140,12 @@ class HtmlProcessor():
             elif 'geeksforgeeks.org' in href:
                 ele.name = 'span'
                 del ele.attrs['href']
+
+    def modify_image(self, ele):
+        if ele.name == 'img':
+            ratio = float(ele.attrs['height']) / float(ele.attrs['width']) 
+            ele.attrs['width'] = 500
+            ele.attrs['height'] = 500 * ratio
     
     def external_references(self, ele):
         if ele.name == 'p':
